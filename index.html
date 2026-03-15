@@ -1,4 +1,5 @@
 google-site-verification: googlee4f7ba9c01e7fe3d.html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -975,7 +976,244 @@ google-site-verification: googlee4f7ba9c01e7fe3d.html
 
 <button id="scrolltop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────
+// MINI CHART ENGINE — zero dependencies, fully self-contained
+// Supports: donut, bar (vertical), barH (horizontal)
+// ─────────────────────────────────────────────────────────────
+const MiniChart = (() => {
+  const FONT = "11px 'IBM Plex Mono', monospace";
+  const FONT_SM = "9px 'IBM Plex Mono', monospace";
+  const LABEL_COLOR = '#7f96b0';
+  const GRID_COLOR  = 'rgba(255,255,255,0.05)';
+
+  function dpr() { return window.devicePixelRatio || 1; }
+
+  function setup(canvas) {
+    const r = canvas.parentElement.getBoundingClientRect();
+    const w = r.width  || canvas.parentElement.offsetWidth  || 400;
+    const h = r.height || canvas.parentElement.offsetHeight || 220;
+    const d = dpr();
+    canvas.width  = w * d;
+    canvas.height = h * d;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(d, d);
+    return { ctx, w, h };
+  }
+
+  function niceMax(vals) {
+    const m = Math.max(...vals);
+    if (m === 0) return 1;
+    const mag = Math.pow(10, Math.floor(Math.log10(m)));
+    return Math.ceil(m / mag) * mag;
+  }
+
+  function abbr(n) {
+    if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(0) + 'k';
+    return n.toString();
+  }
+
+  // ── DONUT ────────────────────────────────────────────────────
+  function donut(canvas, { labels, data, colors }) {
+    const { ctx, w, h } = setup(canvas);
+    const legW  = 160;
+    const cx    = (w - legW) / 2;
+    const cy    = h / 2;
+    const ro    = Math.min(cx, cy) - 10;
+    const ri    = ro * 0.52;
+    const total = data.reduce((a, b) => a + b, 0);
+
+    let angle = -Math.PI / 2;
+    data.forEach((v, i) => {
+      const sweep = (v / total) * 2 * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, ro, angle, angle + sweep);
+      ctx.closePath();
+      ctx.fillStyle = colors[i];
+      ctx.fill();
+      angle += sweep;
+    });
+
+    // hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, ri, 0, 2 * Math.PI);
+    ctx.fillStyle = '#111822';
+    ctx.fill();
+
+    // center label
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.font = "bold 13px 'IBM Plex Mono', monospace";
+    ctx.fillText(abbr(total), cx, cy - 8);
+    ctx.fillStyle = LABEL_COLOR;
+    ctx.font = FONT_SM;
+    ctx.fillText('total', cx, cy + 8);
+
+    // legend (right column)
+    const lx = w - legW + 4;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    labels.forEach((lbl, i) => {
+      const ly = 18 + i * 22;
+      ctx.fillStyle = colors[i];
+      ctx.fillRect(lx, ly - 5, 10, 10);
+      ctx.fillStyle = LABEL_COLOR;
+      ctx.font = FONT_SM;
+      ctx.fillText(lbl, lx + 14, ly);
+    });
+  }
+
+  // ── BAR (vertical) ───────────────────────────────────────────
+  function bar(canvas, { labels, data, colors, yLabel }) {
+    const { ctx, w, h } = setup(canvas);
+    const pad = { t: 14, r: 14, b: 42, l: 44 };
+    const cw = w - pad.l - pad.r;
+    const ch = h - pad.t - pad.b;
+    const maxVal = niceMax(data);
+    const n = data.length;
+    const gap = Math.max(2, cw * 0.06 / n);
+    const bw  = (cw - gap * (n + 1)) / n;
+
+    // grid + y-axis
+    const ticks = 4;
+    ctx.font = FONT_SM;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= ticks; i++) {
+      const v  = (maxVal / ticks) * i;
+      const y  = pad.t + ch - (v / maxVal) * ch;
+      ctx.strokeStyle = GRID_COLOR;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+      ctx.fillStyle = LABEL_COLOR;
+      ctx.fillText(yLabel ? v.toFixed(1) : abbr(v), pad.l - 4, y);
+    }
+
+    // bars
+    data.forEach((v, i) => {
+      const x  = pad.l + gap + i * (bw + gap);
+      const bh = (v / maxVal) * ch;
+      const y  = pad.t + ch - bh;
+      const c  = Array.isArray(colors) ? colors[i] : colors;
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, bw, bh);
+
+      // x label
+      ctx.fillStyle = LABEL_COLOR;
+      ctx.font = FONT_SM;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(labels[i], x + bw / 2, pad.t + ch + 5);
+    });
+  }
+
+  // ── HORIZONTAL BAR ───────────────────────────────────────────
+  function barH(canvas, { labels, data, color }) {
+    const { ctx, w, h } = setup(canvas);
+    const labelW = 56;
+    const pad = { t: 6, r: 50, b: 6, l: labelW };
+    const cw = w - pad.l - pad.r;
+    const ch = h - pad.t - pad.b;
+    const n  = labels.length;
+    const rowH = ch / n;
+    const bh   = Math.min(rowH * 0.55, 14);
+    const maxVal = niceMax(data);
+
+    // x-axis grid lines
+    [0, 0.25, 0.5, 0.75, 1].forEach(f => {
+      const x = pad.l + f * cw;
+      ctx.strokeStyle = GRID_COLOR;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ch); ctx.stroke();
+      if (f > 0) {
+        ctx.fillStyle = LABEL_COLOR;
+        ctx.font = FONT_SM;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(abbr(Math.round(maxVal * f)), x, pad.t + ch + 4);
+      }
+    });
+
+    labels.forEach((lbl, i) => {
+      const y   = pad.t + i * rowH + rowH / 2;
+      const bw  = (data[i] / maxVal) * cw;
+      // label
+      ctx.fillStyle = LABEL_COLOR;
+      ctx.font = FONT_SM;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(lbl, pad.l - 4, y);
+      // bar
+      ctx.fillStyle = color;
+      ctx.fillRect(pad.l, y - bh / 2, bw, bh);
+      // value
+      ctx.fillStyle = '#fff';
+      ctx.font = FONT_SM;
+      ctx.textAlign = 'left';
+      ctx.fillText(abbr(data[i]), pad.l + bw + 3, y);
+    });
+  }
+
+  // ── GROUPED BAR ──────────────────────────────────────────────
+  function groupedBar(canvas, { labels, datasets, yLabel, yMax, yUnit }) {
+    const { ctx, w, h } = setup(canvas);
+    const pad = { t: 14, r: 14, b: 48, l: 44 };
+    const cw = w - pad.l - pad.r;
+    const ch = h - pad.t - pad.b;
+    const n  = labels.length;
+    const ng = datasets.length;
+    const groupW = cw / n;
+    const gap  = groupW * 0.12;
+    const bw   = (groupW - gap * (ng + 1)) / ng;
+    const maxV = yMax || niceMax(datasets.flatMap(d => d.data));
+
+    const ticks = 4;
+    ctx.font = FONT_SM;
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= ticks; i++) {
+      const v = (maxV / ticks) * i;
+      const y = pad.t + ch - (v / maxV) * ch;
+      ctx.strokeStyle = GRID_COLOR; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+      ctx.fillStyle = LABEL_COLOR;
+      ctx.textBaseline = 'middle';
+      ctx.fillText((yUnit ? v + yUnit : abbr(v)), pad.l - 4, y);
+    }
+
+    labels.forEach((lbl, gi) => {
+      const gx = pad.l + gi * groupW;
+      datasets.forEach((ds, di) => {
+        const v  = ds.data[gi];
+        const x  = gx + gap + di * (bw + gap);
+        const bh = (v / maxV) * ch;
+        ctx.fillStyle = ds.color;
+        ctx.fillRect(x, pad.t + ch - bh, bw, bh);
+      });
+      ctx.fillStyle = LABEL_COLOR;
+      ctx.font = FONT_SM;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const maxLblW = groupW - 4;
+      ctx.save();
+      if (lbl.length > 9) {
+        ctx.translate(gx + groupW / 2, pad.t + ch + 5);
+        ctx.rotate(-0.45);
+        ctx.fillText(lbl, 0, 0);
+      } else {
+        ctx.fillText(lbl, gx + groupW / 2, pad.t + ch + 5);
+      }
+      ctx.restore();
+    });
+  }
+
+  return { donut, bar, barH, groupedBar };
+})();
+</script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // DATA — sourced directly from NIBRS_SexOffenses_PerCapita_Report_v2
@@ -1180,92 +1418,26 @@ function buildOverviewCharts() {
   if (chartsBuilt) return;
   chartsBuilt = true;
 
-  // Offense share donut
-  new Chart(document.getElementById('offense-share-chart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Fondling 41.6%','Rape 37.2%','Sodomy 8.7%','Other 4.2%','Statutory 4.1%','SA/Obj 3.5%','Incest 0.7%'],
-      datasets: [{
-        data: [484364,433155,100842,49387,48212,40239,7696],
-        backgroundColor: ['#2a9c8a','#c94040','#c9932a','#4d6278','#3a7bd5','#8a5cf5','#6a8f6a'],
-        borderWidth: 0, hoverOffset: 4
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: true, position: 'right',
-          labels: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' }, boxWidth: 10, padding: 8 }
-        }
-      }
-    }
+  MiniChart.donut(document.getElementById('offense-share-chart'), {
+    labels: ['Fondling 41.6%','Rape 37.2%','Sodomy 8.7%','Other 4.2%','Statutory 4.1%','SA/Obj 3.5%','Incest 0.7%'],
+    data:   [484364, 433155, 100842, 49387, 48212, 40239, 7696],
+    colors: ['#2a9c8a','#c94040','#c9932a','#4d6278','#3a7bd5','#8a5cf5','#6a8f6a'],
   });
-
-  // Top 10 combined
   const top10 = STATES.slice(0,10);
-  new Chart(document.getElementById('top10-chart'), {
-    type: 'bar',
-    data: {
-      labels: top10.map(s => s[0]),
-      datasets: [{
-        data: top10.map(s => s[8]),
-        backgroundColor: top10.map(s => {
-          const r = s[8];
-          return r>140?'#c94040':r>100?'#d05830':r>80?'#c9932a':'#2a9c8a';
-        }),
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' } }, grid: { display: false } },
-        y: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' } }, grid: { color: 'rgba(255,255,255,0.04)' } }
-      }
-    }
+  MiniChart.bar(document.getElementById('top10-chart'), {
+    labels: top10.map(s => s[0]),
+    data:   top10.map(s => s[8]),
+    colors: top10.map(s => s[8]>140?'#c94040':s[8]>100?'#d05830':s[8]>80?'#c9932a':'#2a9c8a'),
   });
-
-  // Victim age
-  new Chart(document.getElementById('victim-age-chart'), {
-    type: 'bar',
-    data: {
-      labels: ['0–5','6–9','10–11','12–14','15–17','18–24','25–34','35–49','50–64','65+'],
-      datasets: [{
-        data: [82790,101456,64367,198070,204061,170016,140466,115584,42485,15138],
-        backgroundColor: '#c94040', borderWidth: 0
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#7f96b0', font: { size: 9, family: 'IBM Plex Mono' }, maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' } }, grid: { display: false } }
-      }
-    }
+  MiniChart.barH(document.getElementById('victim-age-chart'), {
+    labels: ['0–5','6–9','10–11','12–14','15–17','18–24','25–34','35–49','50–64','65+'],
+    data:   [82790,101456,64367,198070,204061,170016,140466,115584,42485,15138],
+    color:  '#c94040',
   });
-
-  // Sex chart
-  new Chart(document.getElementById('sex-chart'), {
-    type: 'bar',
-    data: {
-      labels: ['Victim: Female','Victim: Male','Offender: Male','Offender: Female'],
-      datasets: [{
-        data: [84.4, 13.9, 84.0, 5.4],
-        backgroundColor: ['#2a9c8a','#3a7bd5','#c94040','#c9932a'],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#7f96b0', font: { size: 9, family: 'IBM Plex Mono' }, maxRotation: 25 }, grid: { display: false } },
-        y: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.04)' }, max: 100 }
-      }
-    }
+  MiniChart.groupedBar(document.getElementById('sex-chart'), {
+    labels:   ['Victim: Female','Victim: Male','Offender: Male','Offender: Female'],
+    datasets: [{ data: [84.4,13.9,84.0,5.4], color: '#2a9c8a' }],
+    yMax: 100, yUnit: '%',
   });
 }
 
