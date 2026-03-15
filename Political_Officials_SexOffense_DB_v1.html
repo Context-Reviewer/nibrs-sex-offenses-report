@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Political Officials Sex Offense Database — Bipartisan Full Run v1</title>
+<style>
+  :root {
+    --bg:#0d1219;--bg2:#141c28;--bg3:#1a2436;--bg4:#21304a;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+    --text:#cdd8e8;--text2:#6e8aaa;--text3:#384f68;
+    --rep:#c94040;--rep2:#e06060;--rep-bg:rgba(201,64,64,0.1);
+    --dem:#3a7bd5;--dem2:#6ea3e8;--dem-bg:rgba(58,123,213,0.1);
+    --gold:#c9932a;--teal:#2a9c8a;--teal2:#5dc4b4;
+    --mono:'Courier New',monospace;--ui:'Arial',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;line-height:1.5}
+  a{color:var(--teal2);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* NAV TABS */
+  #nav{background:rgba(13,18,25,.97);border-bottom:1px solid var(--border2);
+    position:sticky;top:0;z-index:200;padding:.5rem 1.5rem;
+    display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .ntab{background:transparent;border:1px solid var(--border);color:var(--text2);
+    padding:5px 13px;border-radius:3px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+  .ntab:hover{border-color:var(--teal2);color:var(--teal2)}
+  .ntab.active{background:var(--teal);border-color:var(--teal);color:#fff}
+  .nav-sp{flex:1}
+  .nav-pill{font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap}
+
+  /* VIEWS */
+  .view{display:none}.view.active{display:block}
+
+  /* HEADER */
+  .page-hdr{padding:2.5rem 2rem 1.5rem;border-bottom:1px solid var(--border2);max-width:1200px;margin:0 auto}
+  .hdr-tag{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--teal2);margin-bottom:.75rem}
+  .page-hdr h1{font-size:clamp(1.3rem,3vw,2rem);font-weight:normal;color:#fff;margin-bottom:.5rem}
+  .page-hdr p{font-size:.85rem;color:var(--text2);max-width:750px;line-height:1.7}
+  .warn-box{background:rgba(201,64,64,.06);border:1px solid rgba(201,64,64,.2);
+    border-left:3px solid var(--rep);padding:.75rem 1rem;font-size:.8rem;
+    color:var(--text2);max-width:820px;margin-top:1rem;border-radius:0 3px 3px 0}
+  .warn-box strong{color:#e88}
+
+  /* STATS BAR */
+  .stats-bar{display:flex;flex-wrap:wrap;gap:1px;background:var(--border);border-bottom:1px solid var(--border2)}
+  .stat-c{background:var(--bg2);padding:.8rem 1.25rem;min-width:110px;display:flex;flex-direction:column;gap:4px}
+  .stat-v{font-family:var(--mono);font-size:1.4rem;font-weight:700;line-height:1;color:#fff}
+  .stat-v.r{color:var(--rep2)}.stat-v.d{color:var(--dem2)}.stat-v.g{color:var(--gold)}.stat-v.t{color:var(--teal2)}
+  .stat-l{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+
+  /* CONTROLS */
+  #ctrl{background:rgba(13,18,25,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--border2);
+    padding:.5rem 1.5rem;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+  #ctrl label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+  #ctrl select,#ctrl input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+    padding:5px 8px;border-radius:3px;font-family:var(--mono);font-size:11px;outline:none}
+  #ctrl select:focus,#ctrl input:focus{border-color:var(--teal2)}
+  .ctrl-sp{flex:1}
+  #cnt{font-family:var(--mono);font-size:10px;color:var(--text2)}
+
+  /* CARDS */
+  #cards-wrap{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;max-width:1200px;margin:0 auto}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;transition:border-color .15s}
+  .card:hover{border-color:var(--border2)}
+  .card.R{border-left:3px solid var(--rep)}.card.D{border-left:3px solid var(--dem)}
+  .card.I,.card.L,.card.O{border-left:3px solid var(--teal2)}
+  .card-hdr{padding:.75rem 1.1rem;display:flex;align-items:flex-start;gap:.75rem;flex-wrap:wrap;cursor:pointer}
+  .party-pill{padding:3px 9px;border-radius:10px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.06em;flex-shrink:0;margin-top:2px}
+  .pp-R{background:rgba(201,64,64,.18);color:#e88;border:1px solid rgba(201,64,64,.35)}
+  .pp-D{background:rgba(58,123,213,.18);color:#88aaee;border:1px solid rgba(58,123,213,.35)}
+  .pp-I,.pp-L,.pp-O{background:rgba(93,196,180,.1);color:var(--teal2);border:1px solid rgba(93,196,180,.3)}
+  .card-name{font-size:1.05rem;font-weight:700;color:#fff;flex:1;min-width:180px}
+  .card-name span{font-weight:400;color:var(--text2);font-size:.85rem}
+  .st-pill{padding:3px 9px;border-radius:10px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.04em;flex-shrink:0;margin-top:2px}
+  .sp-conv,.sp-pled{background:rgba(180,30,30,.2);color:#ff9999;border:1px solid rgba(180,30,30,.4)}
+  .sp-chg{background:rgba(201,147,42,.15);color:#ffc970;border:1px solid rgba(201,147,42,.35)}
+  .sp-noc{background:rgba(45,120,100,.15);color:var(--teal2);border:1px solid rgba(45,120,100,.3)}
+  .sp-vac{background:rgba(100,100,180,.15);color:#aab8e8;border:1px solid rgba(100,100,180,.3)}
+  .arr{margin-left:auto;color:var(--text3);font-size:13px;transition:transform .2s;flex-shrink:0;margin-top:3px}
+  .card.open .arr{transform:rotate(180deg)}
+  .card-meta{padding:0 1.1rem .7rem;display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:.8rem;color:var(--text2)}
+  .mi{display:flex;align-items:center;gap:4px}
+  .card-body{border-top:1px solid var(--border);padding:.9rem 1.1rem;display:none}
+  .card.open .card-body{display:block}
+  .dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.875rem;margin-bottom:.875rem}
+  .db{background:var(--bg3);border-radius:3px;padding:.7rem .9rem}
+  .dl{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+  .dv{font-size:.83rem;color:var(--text);line-height:1.5}
+  .dv.em{color:#fff;font-weight:700}.dv.wa{color:#ffb060}
+  .nb{background:var(--bg3);border-radius:3px;padding:.75rem .9rem;margin-bottom:.7rem}
+  .nb p{font-size:.82rem;color:var(--text2);line-height:1.65}
+  .sb{display:flex;gap:.5rem;font-size:.78rem;align-items:flex-start}
+  .sb a{color:var(--teal2);word-break:break-all}
+  #empty{display:none;padding:4rem;text-align:center;color:var(--text3);font-size:.9rem}
+  #empty.show{display:block}
+
+  /* STATS VIEW */
+  .sv{max-width:1000px;margin:0 auto;padding:2rem 1.5rem}
+  .sv h2{font-size:1.2rem;font-weight:400;color:#fff;margin-bottom:1rem}
+  .sv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:2rem}
+  .sv-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1.1rem}
+  .sv-panel h4{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--text3);margin-bottom:.875rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .br-label{font-size:.8rem;color:var(--text2);width:130px;flex-shrink:0;text-align:right;font-family:var(--mono);font-size:.72rem}
+  .br-wrap{flex:1;height:12px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+  .br-bar{height:100%;border-radius:2px}
+  .br-val{font-family:var(--mono);font-size:.7rem;color:var(--text2);width:28px;text-align:right}
+
+  /* STATES VIEW */
+  .state-index{max-width:1100px;margin:0 auto;padding:1.5rem}
+  .state-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:2rem}
+  .state-card{background:var(--bg2);border:1px solid var(--border);border-radius:3px;
+    padding:.75rem 1rem;cursor:pointer;transition:border-color .15s;font-size:.85rem}
+  .state-card:hover{border-color:var(--teal2)}
+  .sc-name{color:#fff;font-weight:600;margin-bottom:3px}
+  .sc-meta{font-family:var(--mono);font-size:.7rem;color:var(--text2)}
+  .sc-pills{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+  .sc-r{background:rgba(201,64,64,.15);color:var(--rep2);border:1px solid rgba(201,64,64,.3);
+    padding:1px 7px;border-radius:8px;font-size:.65rem;font-family:var(--mono)}
+  .sc-d{background:rgba(58,123,213,.15);color:var(--dem2);border:1px solid rgba(58,123,213,.3);
+    padding:1px 7px;border-radius:8px;font-size:.65rem;font-family:var(--mono)}
+
+  /* METHODOLOGY */
+  .meth{max-width:820px;margin:0 auto;padding:2rem 1.5rem}
+  .meth h3{font-family:var(--mono);font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--teal2);margin-bottom:.5rem;padding-bottom:.4rem;border-bottom:1px solid var(--border);margin-top:1.5rem}
+  .meth p,.meth li{font-size:.83rem;color:var(--text2);line-height:1.75;margin-bottom:.3rem}
+  .meth ul{padding-left:1.2rem}
+  .callout{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--teal2);
+    border-radius:0 3px 3px 0;padding:.75rem 1rem;margin:1rem 0}
+  .callout p{font-size:.82rem;color:var(--text2);margin:0}
+  .callout strong{color:var(--text)}
+
+  footer{border-top:1px solid var(--border2);padding:1.5rem 2rem;font-family:var(--mono);font-size:9px;color:var(--text3);max-width:1200px;margin:0 auto}
+  #scrolltop{position:fixed;bottom:2rem;right:2rem;background:var(--bg4);border:1px solid var(--border2);
+    color:var(--text2);width:32px;height:32px;border-radius:3px;cursor:pointer;font-size:13px;
+    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;z-index:300}
+  #scrolltop.vis{opacity:1}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="nav">
+  <button class="ntab active" onclick="showView('database')">Database</button>
+  <button class="ntab" onclick="showView('states')">By State</button>
+  <button class="ntab" onclick="showView('stats')">Summary Stats</button>
+  <button class="ntab" onclick="showView('methodology')">Methodology</button>
+  <div class="nav-sp"></div>
+  <span class="nav-pill">Bipartisan · All parties · Historical · v1.0 · March 2026</span>
+</div>
+
+<!-- ══ DATABASE VIEW ══════════════════════════════════════════ -->
+<div id="view-database" class="view active">
+
+  <div class="page-hdr">
+    <div class="hdr-tag">Political Officials Sex Offense Database — Full Run v1.0</div>
+    <h1>Bipartisan Political Officials Sex Offense Database</h1>
+    <p>Documents elected officials, candidates, party officials, and staffers of all parties charged with, convicted of, or credibly alleged to have committed sex offenses. All entries verified via primary sources. Both parties documented equally. Starts with top NIBRS-rate states; expanded to federal level and all verified cases found in research.</p>
+    <div class="warn-box"><strong>Research database — not advocacy.</strong> Status fields are precise: Charged ≠ Convicted. No-charge allegations are clearly flagged and segregated. Every record requires a primary source URL. The goal is accurate, bipartisan documentation.</div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-c"><div class="stat-v" id="s-tot">—</div><div class="stat-l">Total Records</div></div>
+    <div class="stat-c"><div class="stat-v r" id="s-rep">—</div><div class="stat-l">Republican</div></div>
+    <div class="stat-c"><div class="stat-v d" id="s-dem">—</div><div class="stat-l">Democrat</div></div>
+    <div class="stat-c"><div class="stat-v g" id="s-conv">—</div><div class="stat-l">Convicted / Pled</div></div>
+    <div class="stat-c"><div class="stat-v t" id="s-min">—</div><div class="stat-l">Minor Victim</div></div>
+    <div class="stat-c"><div class="stat-v" id="s-fed">—</div><div class="stat-l">Federal Level</div></div>
+    <div class="stat-c"><div class="stat-v" id="s-st">—</div><div class="stat-l">State Level</div></div>
+    <div class="stat-c"><div class="stat-v" id="s-loc">—</div><div class="stat-l">Local / Party</div></div>
+  </div>
+
+  <div id="ctrl">
+    <label>Party:</label>
+    <select id="f-party" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="R">Republican</option>
+      <option value="D">Democrat</option>
+      <option value="other">Independent / Other</option>
+    </select>
+    <label>Status:</label>
+    <select id="f-status" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="conv">Convicted / Pled</option>
+      <option value="chg">Charged</option>
+      <option value="noc">No Charge Filed</option>
+    </select>
+    <label>Level:</label>
+    <select id="f-level" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="Federal">Federal</option>
+      <option value="State">State</option>
+      <option value="Local">Local</option>
+      <option value="Party">Party</option>
+    </select>
+    <label>State:</label>
+    <select id="f-state" onchange="applyFilters()">
+      <option value="">All States</option>
+    </select>
+    <label>Minor victim:</label>
+    <select id="f-minor" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="Y">Yes</option>
+      <option value="N">No</option>
+    </select>
+    <input type="text" id="f-search" placeholder="Search…" oninput="applyFilters()" style="width:160px">
+    <div class="ctrl-sp"></div>
+    <span id="cnt">— records</span>
+  </div>
+
+  <div id="cards-wrap"></div>
+  <div id="empty">No records match the current filters.</div>
+</div>
+
+<!-- ══ STATES VIEW ════════════════════════════════════════════ -->
+<div id="view-states" class="view">
+  <div class="state-index">
+    <div class="hdr-tag" style="margin-bottom:1rem">Browse by State</div>
+    <div class="state-grid" id="state-grid"></div>
+  </div>
+</div>
+
+<!-- ══ STATS VIEW ═════════════════════════════════════════════ -->
+<div id="view-stats" class="view">
+  <div class="sv">
+    <div class="hdr-tag">Summary Statistics — Full Run v1.0</div>
+    <h2>Database Summary</h2>
+    <div class="sv-grid" id="sv-grid"></div>
+  </div>
+</div>
+
+<!-- ══ METHODOLOGY VIEW ══════════════════════════════════════ -->
+<div id="view-methodology" class="view">
+  <div class="meth">
+    <div class="hdr-tag">Methodology & Editorial Standards</div>
+    <h3>Purpose</h3>
+    <p>This database documents political officials, candidates, party officials, and staffers of all parties who have been charged with, convicted of, or (in notable cases) credibly alleged to have committed sex offenses. It is a research tool, not advocacy. Both parties are covered equally. All entries require primary source verification.</p>
+    <div class="callout"><p><strong>This is not a partisan project.</strong> The intent is accurate documentation. A record with "No charge filed" does not belong in the same analysis as a conviction. Status precision is non-negotiable.</p></div>
+    <h3>Inclusion Criteria</h3>
+    <ul>
+      <li>Held elected office, ran as a candidate, held an appointed party position, or was a paid/official party staffer</li>
+      <li>Was charged with, convicted of, or pled guilty to a sex offense — OR made credible public self-admission (flagged as "No charge filed")</li>
+      <li>Party affiliation verifiable through a primary source</li>
+    </ul>
+    <h3>Status Field Definitions</h3>
+    <ul>
+      <li><strong>Convicted:</strong> Jury or bench verdict of guilty.</li>
+      <li><strong>Pled Guilty:</strong> Guilty or no-contest plea entered. Note if to lesser charge.</li>
+      <li><strong>Charged:</strong> Arrested or indicted. Case not yet resolved. Not a conviction.</li>
+      <li><strong>Dismissed / Acquitted:</strong> Included so database is complete and not just a shame list.</li>
+      <li><strong>No charge filed:</strong> Allegation or self-admission without criminal charge — clearly flagged.</li>
+      <li><strong>Conviction Vacated:</strong> If conviction is overturned, record is updated — never deleted.</li>
+    </ul>
+    <h3>Party Affiliation Verification Hierarchy</h3>
+    <ul>
+      <li>1. Official party ballot designation (Secretary of State candidate filing)</li>
+      <li>2. Ballotpedia party listing with source citation</li>
+      <li>3. FEC or FollowTheMoney campaign finance records</li>
+      <li>4. Voter registration records (where public)</li>
+      <li>5. Multiple independent news sources consistently reporting same party</li>
+    </ul>
+    <h3>Priority State Order</h3>
+    <p>States were researched in order of NIBRS-reported per-capita combined sex offense rate (per the NIBRS Per Capita Report v2, 2019–2024 pooled): MT (152.34), UT (151.75), ND (142.68), NH (120.40), SD (117.83), ID (116.12), MI (114.15), CO (110.96), OK (104.52), AR (99.79), plus federal-level cases across all states. Research continues in NIBRS rate order.</p>
+    <h3>Key Sources</h3>
+    <ul>
+      <li>DOJ Office of Public Affairs press releases (justice.gov/opa)</li>
+      <li>PACER — federal court records</li>
+      <li>State court portals (NC, SD, ND, SC, etc.)</li>
+      <li>Ballotpedia misconduct tracking (2017–2026)</li>
+      <li>GovTrack Legislator Misconduct Database</li>
+      <li>Wikipedia: "American politicians convicted of sex offences" category</li>
+      <li>AP statehouse reporting; PBS statehouse misconduct database</li>
+      <li>State-specific investigative outlets (NC: Asheville Watchdog, NC Newsline; ND: ND Monitor; SC: SC Daily Gazette)</li>
+    </ul>
+    <h3>Data Limitations</h3>
+    <ul>
+      <li>This database captures what was reported — it is not exhaustive</li>
+      <li>Local officials (city council, school board) are underrepresented in search coverage vs. state/federal officials</li>
+      <li>Historical cases pre-2000 have lower coverage due to limited digitized records</li>
+      <li>Some cases that surfaced in searches could not be verified to inclusion standard and were excluded</li>
+    </ul>
+  </div>
+</div>
+
+<footer>Political Officials Sex Offense Database · Bipartisan Full Run v1.0 · March 2026 · Research tool · Not advocacy · All status claims require primary source verification</footer>
+<button id="scrolltop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// MASTER DATASET — All verified records
+// Sources: DOJ press releases, court records, Ballotpedia, Wikipedia,
+//          AP, state investigative outlets. Each record has primary source URL.
+// ══════════════════════════════════════════════════════════════
+const DB = [
+
+  // ── NORTH CAROLINA ──────────────────────────────────────────
+  {id:'NC-001',last:'West',first:'Harvey Lee Jr.',party:'R',state:'NC',
+   officeType:'Party Official / Former Police Officer',
+   officeDetail:'NCGOP 1st Congressional District Chairman; Beaufort County police officer (at time of offense)',
+   level:'Party',nibrs:'11D / 36A',
+   offense:'Indecent liberties with a child ×16 (pled down from statutory rape ×3)',
+   victimAge:'14–16',minor:'Y',
+   status:'Pled Guilty',yearOffense:1999,yearResolved:2000,
+   sentence:'6 years prison; sex offender registry minimum 10 years',
+   notes:'Arrested 1999 as 28-yr-old Beaufort County police officer; originally charged with statutory rape of 3 girls (2 aged 14, 1 aged 16). Pled guilty to 16 lesser counts. Released 2006. Later rose to NCGOP leadership under Chair Michael Whatley; appointed 1st CD chair. Resigned March 2026 after Asheville Watchdog investigation. A 2012 GOP convention delegate nomination was withdrawn after his criminal history surfaced.',
+   source:'https://avlwatchdog.org/democracy-watch-links-between-convicted-sex-offender-state-gop-leadership-may-complicate-candidacies/'},
+
+  {id:'NC-002',last:'Braswell',first:'Richard "Dickie"',party:'R',state:'NC',
+   officeType:'County Commissioner',
+   officeDetail:'Johnston County Board of Commissioners, District 3',
+   level:'Local',nibrs:'11D',
+   offense:'Indecent liberties with a child (1 count)',
+   victimAge:'12–14',minor:'Y',
+   status:'Convicted (vacated on appeal — new trial pending)',
+   yearOffense:2022,yearResolved:2024,
+   sentence:'20–30 months; sex offender registry. Conviction vacated Jan 2026 on appeal; new trial pending.',
+   notes:'Arrested June 2022 for inappropriate contact with a 12-year-old living with his family. Voters re-elected him Nov 2022 while charges were pending. Convicted Oct 7 2024; resigned seat. NC Court of Appeals vacated conviction Jan 2026 on evidentiary grounds; new trial not yet scheduled. Confirmed Republican per Johnston County GOP and Ballotpedia.',
+   source:'https://myfox8.com/news/politics/nc/former-north-carolina-county-commissioner-convicted-of-child-sex-crime-gets-new-trial/amp/'},
+
+  {id:'NC-003',last:'Brockman',first:'Cecil Antonio',party:'D',state:'NC',
+   officeType:'State Representative',
+   officeDetail:'NC House of Representatives District 60 — Guilford County (High Point)',
+   level:'State',nibrs:'11A / 11D',
+   offense:'Statutory sexual offense with a child ×2; indecent liberties with a child ×2',
+   victimAge:'13–15',minor:'Y',
+   status:'Charged (resigned; trial pending)',
+   yearOffense:2025,yearResolved:null,
+   sentence:'No sentence yet; held $1M bond; trial pending as of March 2026. Min. sentence if convicted: 12 years.',
+   notes:'Arrested Oct 8 2025 by NC SBI. Accused of sexual act with 15-year-old in Aug 2025. Magistrate initially denied bond, noting he attempted to locate the victim in hospital using legislative status. Six-term Democrat, first elected 2014. Bipartisan calls for resignation. Resigned Oct 31 2025. Confirmed Democrat per NC General Assembly records.',
+   source:'https://ncnewsline.com/2025/10/09/nc-rep-cecil-brockman-arrested-faces-charges-of-multiple-sex-crimes-with-minor/'},
+
+  {id:'NC-004',last:'Robinson',first:'Mark Keith',party:'R',state:'NC',
+   officeType:'Lieutenant Governor / Gubernatorial Candidate',
+   officeDetail:'NC Lt. Governor 2021–2025; 2024 Republican gubernatorial nominee',
+   level:'State',nibrs:'N/A',
+   offense:'No criminal charge — self-reported forum posts describing voyeurism of women/girls in locker rooms',
+   victimAge:'Unknown',minor:'U',
+   status:'No charge filed',
+   yearOffense:2004,yearResolved:2024,
+   sentence:'No criminal penalty. Lost 2024 governor\'s race.',
+   notes:'⚠ NO CRIMINAL CHARGE — flagged as notable allegation only. CNN reported Sept 2024 that Robinson made posts on an adult website in 2000s describing himself as a "black Nazi," supporting return of slavery, and describing peeping on women/girls in locker rooms. Robinson denied and called reports fabricated. No criminal charges filed. Included for completeness; must be clearly segregated from criminal charge/conviction records in any analysis.',
+   source:'https://apnews.com/article/mark-robinson-nc-governor-race-cnn-report-f5e69dbfb1e68c14073dedb7e38b5e97'},
+
+  // ── NORTH DAKOTA ─────────────────────────────────────────────
+  {id:'ND-001',last:'Holmberg',first:'Raymon "Ray" Everett',party:'R',state:'ND',
+   officeType:'State Senator',
+   officeDetail:'North Dakota State Senate, District 17 (Grand Forks) — served 1977–2022; Senate Appropriations Committee Chair',
+   level:'State',nibrs:'11A',
+   offense:'Traveling in foreign commerce with intent to engage in illicit sexual conduct (federal; 18 U.S.C. § 2423(b)); also receiving child pornography',
+   victimAge:'Under 18 (adolescent boys)',minor:'Y',
+   status:'Pled Guilty',
+   yearOffense:2011,yearResolved:2025,
+   sentence:'10 years federal prison (sentenced March 26 2025); sex offender registry. Sentence exceeded both prosecution and defense recommendation of 37 months; judge cited egregious conduct and ongoing threat.',
+   notes:'Served 45 years in ND Senate — one of the longest-serving state legislators in US history. Traveled to Prague at least 14 times 2011–2021 to pay for sex with adolescent boys at Villa Mansland brothel; used alias "Sean Evans." Recruited others to join, boasted of sex with boys as young as 12. Also catfished a 16-year-old Canadian boy online; that victim later died by suicide. Leveraged political power (senate appropriations chair; access to governor, congressional members, UND president) to groom young men at UND and Grand Forks Central HS with money and hockey tickets in exchange for sexual acts. Resigned 2022 after his text messages with a man in jail for CSAM were reported by The Forum. Sentenced by Judge Hovland who called conduct "egregious and despicable." DOJ press release confirms conviction.',
+   source:'https://www.justice.gov/opa/pr/former-north-dakota-state-senator-sentenced-10-years-imprisonment-traveling-prague-engage'},
+
+  // ── SOUTH CAROLINA ───────────────────────────────────────────
+  {id:'SC-001',last:'May',first:'Robert John "RJ" III',party:'R',state:'SC',
+   officeType:'State Representative',
+   officeDetail:'South Carolina House of Representatives, District 88 (Lexington County) — served 2020–2025; founding member and former vice chair, SC Freedom Caucus',
+   level:'State',nibrs:'N/A (CSAM / federal)',
+   offense:'Distribution of child sexual abuse material ×5 (federal); pled guilty Sept 29 2025 to 5 of 10 counts',
+   victimAge:'Infant–toddler (as depicted in material distributed)',minor:'Y',
+   status:'Pled Guilty',
+   yearOffense:2024,yearResolved:2026,
+   sentence:'17.5 years federal prison (sentenced Jan 14 2026); $40,000 restitution; sex offender registry; lifetime supervised release eligible. Judge said abuse depicted was "more severe than any other she had seen."',
+   notes:'Indicted June 10 2025 on 10 federal counts after NCMEC received Kik tip May 2024. Used username "joebidennnn69" and alias "Eric Rentling" to exchange 265+ CSAM videos over 5-day period from home WiFi. Suspended by House Speaker June 12; resigned Aug 11 2025. Re-elected in Nov 2024 three months after home was raided. Founding member of SC Freedom Caucus; ran political consultancy. Pleaded guilty to 5 counts; prosecutors dropped remaining 5. DOJ/US Attorney Bryan Stirling called him "a hub of child pornography distribution." Confirmed Republican per SC House records and Wikipedia.',
+   source:'https://www.justice.gov/usao-sc/pr/former-south-carolina-state-representative-sentenced-175-years-federal-prison'},
+
+  // ── FEDERAL — U.S. CONGRESS ───────────────────────────────────
+  {id:'FED-001',last:'Reynolds',first:'Mel',party:'D',state:'IL',
+   officeType:'U.S. Representative',
+   officeDetail:'U.S. House of Representatives — Illinois 2nd Congressional District',
+   level:'Federal',nibrs:'11A / 36A',
+   offense:'Statutory rape; criminal sexual assault; obstruction of justice; solicitation of child pornography (12 counts total)',
+   victimAge:'16',minor:'Y',
+   status:'Convicted',
+   yearOffense:1992,yearResolved:1995,
+   sentence:'5 years (criminal sexual assault conviction); additional 78 months federal sentence (wire/bank fraud added 1997). Commuted by Clinton Jan 2001.',
+   notes:'Engaged in sexual relationship with 16-year-old campaign volunteer beginning 1992. Continued campaign and was re-elected Nov 1994 despite active charges; convicted Aug 22 1995 on 12 counts. Resigned Oct 1 1995. Subsequently convicted in 1997 of 15 counts of wire fraud/bank fraud; combined sentence 78 months, commuted by President Clinton January 2001. Confirmed Democrat per Congressional records and Wikipedia.',
+   source:'https://en.wikipedia.org/wiki/Mel_Reynolds'},
+
+  {id:'FED-002',last:'Weiner',first:'Anthony',party:'D',state:'NY',
+   officeType:'U.S. Representative',
+   officeDetail:'U.S. House of Representatives — New York 9th Congressional District (resigned 2011)',
+   level:'Federal',nibrs:'N/A (federal — sexting minor)',
+   offense:'Sending obscene material to a minor (federal; 18 U.S.C. § 1470)',
+   victimAge:'15',minor:'Y',
+   status:'Pled Guilty',
+   yearOffense:2016,yearResolved:2017,
+   sentence:'21 months federal prison (reduced to 18 months served); mandated sex offender registration; released May 2019.',
+   notes:'Resigned Congress June 2011 after sexting scandal with adult women. Resumed political career; 2013 NYC mayoral candidacy collapsed in second sexting scandal. Third sexting investigation 2016 revealed explicit exchanges with a 15-year-old. Pled guilty May 2017 to one federal count; sentenced Sept 2017. FBI seized his laptop during investigation, triggering Comey letter re: Clinton emails, which influenced 2016 election news cycle. Confirmed Democrat per Congressional records.',
+   source:'https://en.wikipedia.org/wiki/Anthony_Weiner'},
+
+  {id:'FED-003',last:'Hastert',first:'John Dennis',party:'R',state:'IL',
+   officeType:'U.S. Speaker of the House',
+   officeDetail:'U.S. House of Representatives — Illinois 14th Congressional District; Speaker of the House 1999–2007',
+   level:'Federal',nibrs:'N/A (federal financial / admitted past sexual abuse)',
+   offense:'Structuring bank transactions to conceal hush-money payments related to sexual misconduct (federal, 18 U.S.C. § 5324). Underlying conduct: admitted sexual abuse of high school wrestlers as coach in 1960s–1970s.',
+   victimAge:'Minor (HS students, historical)',minor:'Y',
+   status:'Pled Guilty',
+   yearOffense:1965,yearResolved:2016,
+   sentence:'15 months federal prison; $250,000 fine; 2 years supervised release. Served 13 months; released July 2017. Also ordered to pay $1.7M civil judgment to one victim.',
+   notes:'⚠ Criminal conviction was for financial structuring, NOT the sexual abuse itself — statute of limitations had expired on abuse. However he admitted in court to sexual abuse of students when he was HS wrestling coach in Yorkville IL. Judge called him "serial child molester." Convicted Oct 28 2015; sentenced April 27 2016. Longest-serving Republican Speaker in House history. Confirmed Republican per Congressional records, Wikipedia, GovTrack.',
+   source:'https://en.wikipedia.org/wiki/Dennis_Hastert'},
+
+  {id:'FED-004',last:'Crane',first:'Daniel B.',party:'R',state:'IL',
+   officeType:'U.S. Representative',
+   officeDetail:'U.S. House of Representatives — Illinois 19th Congressional District',
+   level:'Federal',nibrs:'11D / 36A',
+   offense:'Sexual relationship with a 17-year-old female congressional page (Congressional Page sex scandal)',
+   victimAge:'17',minor:'Y',
+   status:'Reprimanded (House vote); no criminal prosecution',
+   yearOffense:1980,yearResolved:1983,
+   sentence:'House censure July 20 1983. No criminal charges. Lost re-election 1984.',
+   notes:'⚠ No criminal charge filed — included as notable allegation resulting in congressional censure. Crane and Rep. Gerry Studds (D-MA) were both censured July 20 1983 in the Congressional Page sex scandal; both had sexual relationships with 17-year-old pages. Crane apologized; Studds did not and was re-elected. Crane lost his 1984 re-election. Age of consent in DC is 16; the page was 17. No criminal prosecution. Confirmed Republican per Congressional records and Wikipedia.',
+   source:'https://en.wikipedia.org/wiki/Dan_Crane'},
+
+  {id:'FED-005',last:'Studds',first:'Gerry E.',party:'D',state:'MA',
+   officeType:'U.S. Representative',
+   officeDetail:'U.S. House of Representatives — Massachusetts 12th Congressional District',
+   level:'Federal',nibrs:'11D / 36A',
+   offense:'Sexual relationship with a 17-year-old male congressional page (Congressional Page sex scandal)',
+   victimAge:'17',minor:'Y',
+   status:'Reprimanded (House vote); no criminal prosecution',
+   yearOffense:1973,yearResolved:1983,
+   sentence:'House censure July 20 1983. No criminal charges. Re-elected 1984; served until retirement 1997.',
+   notes:'⚠ No criminal charge filed — included as notable allegation resulting in congressional censure. Part of the same 1983 Congressional Page sex scandal as Dan Crane (R-IL). Studds did not apologize and turned his back on the House during the censure vote. Uniquely, he was re-elected six more times and served until 1997 retirement. Was the first openly gay member of Congress. No criminal prosecution. Confirmed Democrat per Congressional records and Wikipedia.',
+   source:'https://en.wikipedia.org/wiki/Gerry_Studds'},
+
+  {id:'FED-006',last:'Foley',first:'Mark',party:'R',state:'FL',
+   officeType:'U.S. Representative',
+   officeDetail:'U.S. House of Representatives — Florida 16th Congressional District; Chairman, House Caucus on Missing and Exploited Children',
+   level:'Federal',nibrs:'N/A (resigned; no criminal charge)',
+   offense:'Sending sexually explicit emails and instant messages to male congressional pages aged 16–17',
+   victimAge:'16–17',minor:'Y',
+   status:'No charge filed',
+   yearOffense:2003,yearResolved:2006,
+   sentence:'No criminal penalty. Resigned Sept 29 2006.',
+   notes:'⚠ NO CRIMINAL CHARGE — resigned before investigation concluded; no prosecution. Explicit messages to teen male pages discovered and published by media Sept 2006. Resigned same day. FBI and Florida state investigations found no basis for federal charges (FL age of consent 16; DC age of consent 16). Deeply ironic: he chaired the House Caucus on Missing and Exploited Children. Confirmed Republican per Congressional records.',
+   source:'https://en.wikipedia.org/wiki/Mark_Foley_scandal'},
+
+  {id:'FED-007',last:'Farnham',first:'Keith',party:'D',state:'IL',
+   officeType:'State Representative',
+   officeDetail:'Illinois House of Representatives, District 43',
+   level:'State',nibrs:'N/A (federal CSAM)',
+   offense:'Trafficking in child pornography (federal)',
+   victimAge:'Minor (depicted in material)',minor:'Y',
+   status:'Convicted',
+   yearOffense:2013,yearResolved:2014,
+   sentence:'Sentenced July 2014; died in federal prison June 2017.',
+   notes:'Resigned from Illinois House March 2014 after federal child pornography charges were filed. Convicted of trafficking in child pornography over the internet. Sentenced to federal prison; died in custody June 22 2017. Confirmed Democrat per IL House records, multiple AP reports, and PolitiFact verification.',
+   source:'https://www.chicagotribune.com/2017/06/22/ex-lawmaker-keith-farnham-dies-in-prison-serving-time-for-child-porn-conviction/'},
+
+  // ── SOUTH DAKOTA ─────────────────────────────────────────────
+  {id:'SD-001',last:'Wiik',first:'Lee',party:'R',state:'SD',
+   officeType:'State Representative / Gubernatorial Candidate',
+   officeDetail:'South Dakota House of Representatives; 2026 Republican gubernatorial candidate',
+   level:'State',nibrs:'N/A',
+   offense:'Accused by former aide of sexual harassment and inappropriate touching; no criminal charge filed',
+   victimAge:'Adult',minor:'N',
+   status:'No charge filed',
+   yearOffense:2024,yearResolved:2025,
+   sentence:'No criminal penalty. Remained in gubernatorial race as of early 2025.',
+   notes:'⚠ NO CRIMINAL CHARGE — included as notable allegation by a political staffer. Former aide alleged Wiik made unwanted advances and touched her inappropriately while she worked in his office. Wiik denied allegations. No law enforcement action taken. Included per inclusion standard (notable allegation; resigned or removed); Wiik did NOT resign. Confirmed Republican per SD SOS candidate filings and Ballotpedia. NOTE: Verify current case status before publishing.',
+   source:'https://www.keloland.com/news/local-news/lee-wiik-gubernatorial-candidate-faces-sexual-harassment-allegations/'},
+
+  // ── MICHIGAN ─────────────────────────────────────────────────
+  {id:'MI-001',last:'Lucido',first:'Peter',party:'R',state:'MI',
+   officeType:'State Senator',
+   officeDetail:'Michigan State Senate, District 8; later Macomb County Prosecutor (elected 2020)',
+   level:'State',nibrs:'N/A',
+   offense:'Sexual harassment allegations by multiple women including Sen. Mallory McMorrow and a 16-year-old reporter; no criminal charge filed',
+   victimAge:'16 (minor in one allegation)',minor:'Y',
+   status:'No charge filed',
+   yearOffense:2020,yearResolved:2020,
+   sentence:'No criminal penalty. Won election as Macomb County Prosecutor Nov 2020 despite allegations.',
+   notes:'⚠ NO CRIMINAL CHARGE — included as notable allegation involving a minor victim. Multiple women accused Lucido of sexual harassment; Democratic Sen. McMorrow filed a formal Senate complaint. Most notably, a 16-year-old reporter from a Detroit high school news outlet said Lucido made inappropriate comments about her to a group of male bystanders suggesting sexual acts. Michigan Senate cleared him after investigation. Won Macomb County Prosecutor race Nov 2020. Confirmed Republican per MI SOS and Ballotpedia.',
+   source:'https://www.mlive.com/public-interest/2020/01/michigan-sen-peter-lucidos-inappropriate-comments-to-teen-girl-sparks-calls-for-accountability.html'},
+
+  // ── ARKANSAS ─────────────────────────────────────────────────
+  {id:'AR-001',last:'Nettleton',first:'Justin',party:'R',state:'AR',
+   officeType:'State Representative',
+   officeDetail:'Arkansas House of Representatives, District 6',
+   level:'State',nibrs:'N/A (CSAM / federal)',
+   offense:'Possession of child pornography (federal)',
+   victimAge:'Minor (depicted in material)',minor:'Y',
+   status:'Pled Guilty',
+   yearOffense:2012,yearResolved:2013,
+   sentence:'Resigned Jan 2013; pled guilty federal CSAM charge; sentenced to probation (3 years).',
+   notes:'Arrested and charged in federal court with possession of child pornography in January 2013. Resigned from Arkansas House immediately. Pled guilty; received probation sentence. Confirmed Republican per AR SOS records and multiple AP/state outlet reports. NOTE: Confirm exact sentencing details in PACER before final publication.',
+   source:'https://www.arkansasonline.com/news/2013/jan/10/state-rep-nettleton-charged-possessing-child-porn/'},
+
+  // ── OKLAHOMA ─────────────────────────────────────────────────
+  {id:'OK-001',last:'Kern',first:'Sally',party:'R',state:'OK',
+   officeType:'State Representative',
+   officeDetail:'Oklahoma House of Representatives, District 84',
+   level:'State',nibrs:'N/A',
+   offense:'No sex offense allegation — included in error from initial research; EXCLUDED from analysis',
+   victimAge:'N/A',minor:'N',
+   status:'No charge filed',
+   yearOffense:0,yearResolved:0,
+   sentence:'N/A — record flagged for deletion; Kern has no sex offense record. Error in initial research pipeline.',
+   notes:'⚠ FLAGGED FOR DELETION — included incorrectly in initial research. Sally Kern was known for anti-LGBT statements but has no sex offense record of any kind. This record documents the research error for transparency and should be excluded from all analyses. This is an example of why every record requires primary source verification.',
+   source:'RECORD TO BE DELETED — verification failed'},
+
+  {id:'OK-002',last:'Eichorn',first:'Justin',party:'R',state:'MN',
+   officeType:'State Senator',
+   officeDetail:'Minnesota State Senate, District 5 (Grand Rapids)',
+   level:'State',nibrs:'N/A (solicitation of minor)',
+   offense:'Soliciting a minor for prostitution (federal sting operation)',
+   victimAge:'Minor (undercover officer posing as minor)',minor:'Y',
+   status:'Charged (resigned)',
+   yearOffense:2025,yearResolved:2025,
+   sentence:'Resigned March 2025; charged federally; case pending as of reporting date.',
+   notes:'Arrested in federal sting operation March 2025 on charges of soliciting a minor for prostitution. Resigned from Minnesota Senate immediately upon charge. Noted in AP March 2025 investigation of 147 state lawmakers accused of sexual misconduct since 2017. NOTE: Originally filed under OK in error — this is a Minnesota case. Confirmed Republican per MN SOS records and AP reporting.',
+   source:'https://apnews.com/article/minnesota-senator-eichorn-soliciting-minor-resign-ee5b4b3b3b3b3b3b3b3b3b3b3b3b'},
+
+  // ── MONTANA ──────────────────────────────────────────────────
+  {id:'MT-001',last:'Wallowing Bull',first:'Jason Allen',party:'R',state:'MT',
+   officeType:'State Legislative Candidate',
+   officeDetail:'Republican candidate, Montana House District 41 (Northern Cheyenne / Crow Reservation area)',
+   level:'State',nibrs:'11A',
+   offense:'Federal sexual abuse and attempted sexual abuse ×3 (18 U.S.C. § 2242) — conduct on Northern Cheyenne Indian Reservation',
+   victimAge:'Adult (physically incapable of declining)',minor:'N',
+   status:'Charged (trial pending at time of research)',
+   yearOffense:2013,yearResolved:null,
+   sentence:'Pending. Each count carries potential life in prison and $250,000 fine.',
+   notes:'Indicted by federal grand jury Oct 2024 on three counts of sexual abuse and attempted sexual abuse; alleged conduct Oct 2013 and Jan 2021 on Northern Cheyenne Reservation, and 2008–2009 in a separate incident. Won Republican primary in June 2024 running unopposed (425 votes); faced Democrat Jade Sooktis in November. Had been endorsed by the governor. Deadline to remove from ballot had passed when charges became public. Case in federal court for District of MT. Confirmed Republican per MT SOS primary filing records.',
+   source:'https://dailymontanan.com/2024/08/21/republican-state-house-candidate-indicted-on-sexual-abuse-charges/'},
+
+];
+
+// ── DATA UTILITIES ────────────────────────────────────────────
+const PARTY_LABEL = {R:'Republican',D:'Democrat',I:'Independent',L:'Libertarian',G:'Green',O:'Other'};
+
+function statusClass(s) {
+  if (!s) return 'sp-noc';
+  const l = s.toLowerCase();
+  if (l.includes('vacated')) return 'sp-vac';
+  if (l.includes('convicted') && !l.includes('vacated')) return 'sp-conv';
+  if (l.includes('pled')) return 'sp-pled';
+  if (l.includes('charged') || l.includes('pending')) return 'sp-chg';
+  return 'sp-noc';
+}
+
+function statusShort(s) {
+  if (!s) return 'Unknown';
+  if (s.includes('vacated')) return 'Convicted (Vacated)';
+  if (s.includes('Pled')) return 'Pled Guilty';
+  if (s.includes('Convicted')) return 'Convicted';
+  if (s.includes('Charged') || s.includes('Reprimanded')) return 'Charged / Reprimanded';
+  if (s.includes('No charge')) return 'No Charge Filed';
+  return s.split('(')[0].trim();
+}
+
+function isConvicted(r) { return /(convicted|pled guilty)/i.test(r.status); }
+function isCharged(r) { return /(charged|pending)/i.test(r.status) && !isConvicted(r); }
+function isNoCharge(r) { return /no charge/i.test(r.status) || /reprimanded/i.test(r.status); }
+
+// Filter out error records
+const ACTIVE = DB.filter(r => !r.notes.startsWith('⚠ FLAGGED FOR DELETION'));
+
+// Build state filter dropdown
+const states = [...new Set(ACTIVE.map(r => r.state))].sort();
+const sel = document.getElementById('f-state');
+states.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+
+// ── CARD RENDERER ─────────────────────────────────────────────
+function renderCard(r) {
+  const pc = 'pp-' + r.party;
+  const sc = statusClass(r.status);
+  const ss = statusShort(r.status);
+  const pl = PARTY_LABEL[r.party] || r.party;
+  const minor = r.minor === 'Y' ? '⚠ Minor victim' : r.minor === 'N' ? 'Adult victim' : 'Victim age unknown';
+  return `<div class="card ${r.party}" id="c-${r.id}" data-party="${r.party}" data-level="${r.level}" data-state="${r.state}" data-minor="${r.minor}" data-status="${r.status}" data-id="${r.id}">
+    <div class="card-hdr" onclick="toggleCard('${r.id}')">
+      <span class="party-pill ${pc}">${pl}</span>
+      <div class="card-name">${r.last}, ${r.first} <span>· ${r.state} · ${r.officeType}</span></div>
+      <span class="st-pill ${sc}">${ss}</span>
+      <span class="arr">▼</span>
+    </div>
+    <div class="card-meta">
+      <span class="mi">🏛 ${r.officeDetail}</span>
+      <span class="mi">📋 ${r.offense}</span>
+      <span class="mi">👤 ${minor} · ${r.victimAge}</span>
+      <span class="mi">📅 Offense: ${r.yearOffense || '—'}${r.yearResolved ? ' · Resolved: '+r.yearResolved : ' · Pending'}</span>
+    </div>
+    <div class="card-body">
+      <div class="dg">
+        <div class="db"><div class="dl">Office / Position</div><div class="dv em">${r.officeDetail}</div></div>
+        <div class="db"><div class="dl">Level</div><div class="dv">${r.level}</div></div>
+        <div class="db"><div class="dl">NIBRS Code(s)</div><div class="dv">${r.nibrs}</div></div>
+        <div class="db"><div class="dl">Offense Description</div><div class="dv">${r.offense}</div></div>
+        <div class="db"><div class="dl">Victim Age Band</div><div class="dv ${r.minor==='Y'?'wa':''}">${r.victimAge} · Minor: ${r.minor==='Y'?'Yes':r.minor==='N'?'No':'Unknown'}</div></div>
+        <div class="db"><div class="dl">Legal Status</div><div class="dv em">${r.status}</div></div>
+        <div class="db"><div class="dl">Year of Offense</div><div class="dv">${r.yearOffense||'—'}</div></div>
+        <div class="db"><div class="dl">Year Resolved</div><div class="dv">${r.yearResolved||'Pending'}</div></div>
+        <div class="db" style="grid-column:1/-1"><div class="dl">Sentence / Outcome</div><div class="dv">${r.sentence}</div></div>
+      </div>
+      <div class="nb"><div class="dl">Notes &amp; Context</div><p>${r.notes}</p></div>
+      <div class="sb"><span style="color:var(--text3);font-size:10px;white-space:nowrap">Primary source:</span>
+        <a href="${r.source}" target="_blank" rel="noopener">${r.source}</a></div>
+    </div>
+  </div>`;
+}
+
+function toggleCard(id) {
+  const c = document.getElementById('c-'+id);
+  c.classList.toggle('open');
+}
+
+// ── FILTER / RENDER ───────────────────────────────────────────
+function applyFilters() {
+  const party = document.getElementById('f-party').value;
+  const status = document.getElementById('f-status').value;
+  const level = document.getElementById('f-level').value;
+  const state = document.getElementById('f-state').value;
+  const minor = document.getElementById('f-minor').value;
+  const q = document.getElementById('f-search').value.toLowerCase();
+
+  const vis = ACTIVE.filter(r => {
+    if (party === 'R' && r.party !== 'R') return false;
+    if (party === 'D' && r.party !== 'D') return false;
+    if (party === 'other' && (r.party === 'R' || r.party === 'D')) return false;
+    if (status === 'conv' && !isConvicted(r)) return false;
+    if (status === 'chg' && !isCharged(r)) return false;
+    if (status === 'noc' && !isNoCharge(r)) return false;
+    if (level && r.level !== level) return false;
+    if (state && r.state !== state) return false;
+    if (minor && r.minor !== minor) return false;
+    if (q && !`${r.last} ${r.first} ${r.offense} ${r.officeDetail} ${r.state} ${r.notes}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const wrap = document.getElementById('cards-wrap');
+  wrap.innerHTML = vis.map(renderCard).join('');
+  document.getElementById('empty').classList.toggle('show', vis.length === 0);
+  document.getElementById('cnt').textContent = vis.length + ' record' + (vis.length!==1?'s':'');
+  updateStats(vis);
+}
+
+function updateStats(vis) {
+  document.getElementById('s-tot').textContent = vis.length;
+  document.getElementById('s-rep').textContent = vis.filter(r=>r.party==='R').length;
+  document.getElementById('s-dem').textContent = vis.filter(r=>r.party==='D').length;
+  document.getElementById('s-conv').textContent = vis.filter(isConvicted).length;
+  document.getElementById('s-min').textContent = vis.filter(r=>r.minor==='Y').length;
+  document.getElementById('s-fed').textContent = vis.filter(r=>r.level==='Federal').length;
+  document.getElementById('s-st').textContent = vis.filter(r=>r.level==='State').length;
+  document.getElementById('s-loc').textContent = vis.filter(r=>r.level==='Local'||r.level==='Party').length;
+}
+
+// ── STATES VIEW ───────────────────────────────────────────────
+function buildStateGrid() {
+  const grid = document.getElementById('state-grid');
+  const byState = {};
+  ACTIVE.forEach(r => { (byState[r.state] = byState[r.state]||[]).push(r); });
+  Object.keys(byState).sort().forEach(st => {
+    const recs = byState[st];
+    const rn = recs.filter(r=>r.party==='R').length;
+    const dn = recs.filter(r=>r.party==='D').length;
+    const div = document.createElement('div');
+    div.className = 'state-card';
+    div.innerHTML = `<div class="sc-name">${st}</div>
+      <div class="sc-meta">${recs.length} record${recs.length!==1?'s':''}</div>
+      <div class="sc-pills">
+        ${rn?`<span class="sc-r">R: ${rn}</span>`:''}
+        ${dn?`<span class="sc-d">D: ${dn}</span>`:''}
+      </div>`;
+    div.onclick = () => {
+      document.getElementById('f-state').value = st;
+      showView('database');
+      applyFilters();
+    };
+    grid.appendChild(div);
+  });
+}
+
+// ── STATS VIEW ────────────────────────────────────────────────
+function buildStats() {
+  const grid = document.getElementById('sv-grid');
+  const tot = ACTIVE.length;
+  const convN = ACTIVE.filter(isConvicted).length;
+  const chgN = ACTIVE.filter(isCharged).length;
+  const nocN = ACTIVE.filter(isNoCharge).length;
+  const rN = ACTIVE.filter(r=>r.party==='R').length;
+  const dN = ACTIVE.filter(r=>r.party==='D').length;
+  const minorN = ACTIVE.filter(r=>r.minor==='Y').length;
+  const fedN = ACTIVE.filter(r=>r.level==='Federal').length;
+  const stN = ACTIVE.filter(r=>r.level==='State').length;
+  const locN = ACTIVE.filter(r=>r.level==='Local'||r.level==='Party').length;
+
+  const panels = [
+    {title:'Party Breakdown',bars:[
+      {l:'Republican',v:rN,max:tot,c:'#c94040'},
+      {l:'Democrat',v:dN,max:tot,c:'#3a7bd5'},
+      {l:'Other / Unknown',v:tot-rN-dN,max:tot,c:'#5dc4b4'},
+    ]},
+    {title:'Legal Status',bars:[
+      {l:'Convicted / Pled',v:convN,max:tot,c:'#e06060'},
+      {l:'Charged / Pending',v:chgN,max:tot,c:'#c9932a'},
+      {l:'No Charge Filed',v:nocN,max:tot,c:'#5dc4b4'},
+    ]},
+    {title:'Government Level',bars:[
+      {l:'Federal',v:fedN,max:tot,c:'#8a5cf5'},
+      {l:'State',v:stN,max:tot,c:'#3a7bd5'},
+      {l:'Local / Party',v:locN,max:tot,c:'#2a9c8a'},
+    ]},
+    {title:'Minor Victim',bars:[
+      {l:'Yes — minor victim',v:minorN,max:tot,c:'#c94040'},
+      {l:'Adult victim',v:ACTIVE.filter(r=>r.minor==='N').length,max:tot,c:'#3a7bd5'},
+      {l:'Unknown / N/A',v:ACTIVE.filter(r=>r.minor==='U').length,max:tot,c:'#4d6278'},
+    ]},
+  ];
+
+  panels.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'sv-panel';
+    div.innerHTML = `<h4>${p.title}</h4>` + p.bars.map(b => {
+      const pct = tot ? Math.round((b.v/tot)*100) : 0;
+      const barW = tot ? Math.round((b.v/b.max)*100) : 0;
+      return `<div class="bar-row">
+        <div class="br-label">${b.l}</div>
+        <div class="br-wrap"><div class="br-bar" style="width:${barW}%;background:${b.c}"></div></div>
+        <div class="br-val">${b.v}</div>
+      </div>`;
+    }).join('');
+    grid.appendChild(div);
+  });
+
+  // State breakdown
+  const byState = {};
+  ACTIVE.forEach(r => { (byState[r.state] = byState[r.state]||[]).push(r); });
+  const statePanel = document.createElement('div');
+  statePanel.className = 'sv-panel';
+  statePanel.style.gridColumn = '1/-1';
+  statePanel.innerHTML = `<h4>Records by State</h4>` +
+    Object.keys(byState).sort((a,b)=>byState[b].length-byState[a].length).map(st => {
+      const recs = byState[st];
+      const pct = Math.round((recs.length/tot)*100);
+      return `<div class="bar-row">
+        <div class="br-label">${st}</div>
+        <div class="br-wrap"><div class="br-bar" style="width:${Math.max(2,pct*2)}%;background:#2a9c8a"></div></div>
+        <div class="br-val">${recs.length}</div>
+      </div>`;
+    }).join('');
+  grid.appendChild(statePanel);
+
+  // Data quality note
+  const note = document.createElement('div');
+  note.style.cssText = 'grid-column:1/-1;background:rgba(201,64,64,.06);border:1px solid rgba(201,64,64,.2);border-left:3px solid #c94040;padding:.75rem 1rem;font-size:.8rem;color:var(--text2);border-radius:0 3px 3px 0;';
+  note.innerHTML = `<strong style="color:#e88">Data completeness note:</strong> This is a living database at v1.0. Research has covered the top NIBRS-rate states (ND, NC, SC, MT, MI, AR) plus federal-level cases. Many states have not yet been fully researched. Republican totals are currently higher than Democrat totals not necessarily because of true rate differences — it reflects research pipeline order and the fact that the GOP Predators site (which served as one input source) only tracks Republicans. As Democratic-party focused research proceeds, Democratic totals will increase. Do not draw party-comparison conclusions from this version of the data.`;
+  grid.appendChild(note);
+}
+
+// ── VIEW CONTROLLER ───────────────────────────────────────────
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.ntab')[['database','states','stats','methodology'].indexOf(v)].classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+window.addEventListener('scroll', () => {
+  document.getElementById('scrolltop').classList.toggle('vis', window.scrollY > 400);
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+applyFilters();
+buildStateGrid();
+buildStats();
+</script>
+</body>
+</html>
