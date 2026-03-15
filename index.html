@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIBRS Sex Offenses Per Capita Report — Interactive Edition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:       #0b0f14;
+    --bg2:      #111822;
+    --bg3:      #19222e;
+    --bg4:      #1f2c3a;
+    --border:   rgba(255,255,255,0.07);
+    --border2:  rgba(255,255,255,0.12);
+    --text:     #d6e0ec;
+    --text2:    #7f96b0;
+    --text3:    #4d6278;
+    --accent:   #c94040;
+    --accent2:  #e05555;
+    --gold:     #c9932a;
+    --teal:     #2a9c8a;
+    --teal2:    #5dc4b4;
+    --blue:     #3a7bd5;
+    --blue2:    #6ea3e8;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── COVER ────────────────────────────────────── */
+  #cover {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 5rem 4rem;
+    border-bottom: 1px solid var(--border2);
+    position: relative; overflow: hidden;
+  }
+  #cover::after {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 40%; height: 100%;
+    background: linear-gradient(135deg, transparent 40%, rgba(201,64,64,0.04) 100%);
+    pointer-events: none;
+  }
+  .cover-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .cover-eyebrow::before {
+    content: '';
+    display: block; width: 32px; height: 1px;
+    background: var(--accent);
+  }
+  h1.cover-title {
+    font-family: var(--sans);
+    font-size: clamp(2.2rem, 4vw, 3.8rem);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--text);
+    max-width: 780px;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+  h1.cover-title strong { font-weight: 600; color: #fff; }
+  .cover-desc {
+    font-size: 0.95rem;
+    color: var(--text2);
+    max-width: 560px;
+    margin-bottom: 3rem;
+    line-height: 1.7;
+  }
+  .cover-stats {
+    display: flex; flex-wrap: wrap; gap: 2.5rem;
+    margin-bottom: 3rem;
+  }
+  .cstat { display: flex; flex-direction: column; gap: 4px; }
+  .cstat-val {
+    font-family: var(--mono);
+    font-size: 2rem;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1;
+  }
+  .cstat-val.red { color: var(--accent2); }
+  .cstat-val.gold { color: var(--gold); }
+  .cstat-val.teal { color: var(--teal2); }
+  .cstat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+  .cover-source {
+    background: rgba(201,64,64,0.06);
+    border: 1px solid rgba(201,64,64,0.2);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    max-width: 680px;
+    line-height: 1.6;
+  }
+  .cover-source span { color: var(--accent2); }
+
+  /* ── STICKY NAV ───────────────────────────────── */
+  #topnav {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(11,15,20,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border2);
+    padding: 0.6rem 2rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .nav-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  #topnav select, #topnav input[type=text] {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    outline: none;
+  }
+  #topnav select:focus, #topnav input:focus { border-color: var(--accent); }
+  .nav-tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .nav-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .nav-spacer { flex: 1; }
+  .coverage-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px;
+  }
+  .dot-high { background: var(--teal2); }
+  .dot-mid { background: var(--gold); }
+  .dot-low { background: var(--accent2); }
+  .dot-vlow { background: var(--text3); }
+
+  /* ── SECTIONS ─────────────────────────────────── */
+  .page-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--border);
+  }
+  .section-header {
+    display: flex; align-items: baseline; gap: 1rem;
+    margin-bottom: 2rem; flex-wrap: wrap;
+  }
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(201,64,64,0.3);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+  h2.section-title {
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: #fff;
+  }
+  .section-note {
+    font-size: 0.82rem;
+    color: var(--text2);
+    max-width: 700px;
+    margin-bottom: 2rem;
+  }
+
+  /* ── METRIC CARDS ─────────────────────────────── */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1px;
+    border: 1px solid var(--border);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  .metric-card {
+    background: var(--bg2);
+    padding: 1.25rem 1rem;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .metric-card:hover { background: var(--bg3); }
+  .metric-num {
+    font-family: var(--mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1;
+  }
+  .metric-num.accent { color: var(--accent2); }
+  .metric-num.gold { color: var(--gold); }
+  .metric-num.teal { color: var(--teal2); }
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  /* ── OFFENSE TYPE TABS ────────────────────────── */
+  .offense-tabs {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .off-tab {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    color: var(--text2);
+    background: transparent;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .off-tab:hover { border-color: var(--text2); color: var(--text); }
+  .off-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── RANKING TABLE ────────────────────────────── */
+  .rank-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .rank-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .rank-table thead tr {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border2);
+  }
+  .rank-table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    cursor: pointer;
+    user-select: none;
+  }
+  .rank-table th:hover { color: var(--text); }
+  .rank-table th.sorted { color: var(--accent2); }
+  .rank-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .rank-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .rank-table tr:last-child td { border-bottom: none; }
+  .rank-num { color: var(--text3); font-family: var(--mono); }
+  .state-name-cell { color: #fff; font-weight: 500; }
+  .rate-cell {
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+  .heat-cell { width: 120px; }
+  .heat-bar-bg {
+    height: 8px; background: rgba(255,255,255,0.05);
+    border-radius: 2px; overflow: hidden;
+  }
+  .heat-bar { height: 100%; border-radius: 2px; }
+  .coverage-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+  }
+  .cov-high { background: rgba(45,156,138,0.15); color: var(--teal2); }
+  .cov-good { background: rgba(201,147,42,0.15); color: var(--gold); }
+  .cov-mod  { background: rgba(58,123,213,0.12); color: var(--blue2); }
+  .cov-low  { background: rgba(201,64,64,0.12); color: var(--accent2); }
+
+  /* ── CROSS-OFFENSE GRID ───────────────────────── */
+  .cross-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 2rem;
+  }
+  .cross-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .cross-table th {
+    background: var(--bg3);
+    padding: 8px 10px;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border2);
+    white-space: nowrap;
+  }
+  .cross-table th:first-child { text-align: left; }
+  .cross-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .cross-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .cross-table tr:hover td { background: rgba(255,255,255,0.025); }
+  .heat0  { color: var(--text3); }
+  .heat1  { color: #7da8c4; }
+  .heat2  { color: #8cb8c4; }
+  .heat3  { color: #9ec4a4; }
+  .heat4  { color: #bfd48a; }
+  .heat5  { color: var(--gold); }
+  .heat6  { color: #d4833a; }
+  .heat7  { color: var(--accent2); }
+  .heat8  { color: #e03030; background: rgba(224,48,48,0.07); }
+  .combined-cell { color: #fff; font-weight: 500; }
+
+  /* ── DEMOGRAPHICS ─────────────────────────────── */
+  .demo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .demo-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem;
+  }
+  .demo-panel h4 {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .demo-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .demo-label {
+    font-size: 11px;
+    color: var(--text2);
+    width: 110px;
+    flex-shrink: 0;
+  }
+  .demo-bar-wrap {
+    flex: 1; height: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px; overflow: hidden;
+  }
+  .demo-bar { height: 100%; border-radius: 2px; }
+  .demo-pct {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    width: 40px;
+    text-align: right;
+  }
+
+  /* ── NORMALIZED INDEX TABLE ───────────────────── */
+  .idx-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 11px; overflow-x: auto;
+  }
+  .idx-table th {
+    background: var(--bg3);
+    padding: 7px 8px;
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border2);
+    text-align: right; white-space: nowrap;
+  }
+  .idx-table th:first-child, .idx-table th:nth-child(2) { text-align: left; }
+  .idx-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    font-family: var(--mono);
+  }
+  .idx-table td:first-child { color: var(--text3); }
+  .idx-table td:nth-child(2) { color: #fff; font-weight: 500; text-align: left; white-space: nowrap; }
+  .idx-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .idx-100 { color: var(--accent2) !important; font-weight: 600 !important; }
+  .idx-hi  { color: var(--accent2); }
+  .idx-mid { color: var(--gold); }
+  .idx-lo  { color: var(--teal2); }
+  .idx-vlo { color: var(--text3); }
+
+  /* ── CA EQUIV ─────────────────────────────────── */
+  .ca-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    margin-bottom: 2rem;
+  }
+  .ca-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .ca-card:hover { border-color: var(--accent); }
+  .ca-state { font-size: 12px; font-weight: 500; color: #fff; margin-bottom: 4px; }
+  .ca-mult {
+    font-family: var(--mono);
+    font-size: 1.3rem;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .ca-mult.x6 { color: var(--accent2); }
+  .ca-mult.x4 { color: #d4783a; }
+  .ca-mult.x3 { color: var(--gold); }
+  .ca-mult.x2 { color: #9ec4a4; }
+  .ca-mult.x1 { color: var(--teal2); }
+  .ca-mult.xlo { color: var(--text3); }
+  .ca-rate {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  /* ── COVERAGE SECTION ─────────────────────────── */
+  .coverage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .coverage-tier {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+  }
+  .coverage-tier h4 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .coverage-tier p {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .states-list {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+
+  /* ── RELATIONSHIP TABLE ───────────────────────── */
+  .rel-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .rel-table th {
+    background: var(--bg3);
+    padding: 7px 10px;
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text3); border-bottom: 1px solid var(--border2);
+    text-align: right;
+  }
+  .rel-table th:first-child { text-align: left; }
+  .rel-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    font-family: var(--mono); font-size: 11px;
+  }
+  .rel-table td:first-child {
+    text-align: left; color: var(--text);
+    font-family: var(--sans); font-size: 12px;
+  }
+  .rel-pct { color: var(--text2); }
+  .rel-u18-high { color: var(--accent2); }
+  .rel-u18-mid  { color: var(--gold); }
+  .rel-u18-lo   { color: var(--teal2); }
+
+  /* ── CHARTS ───────────────────────────────────── */
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  @media (max-width:720px) { .chart-row { grid-template-columns: 1fr; } }
+  .chart-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem;
+  }
+  .chart-panel h4 {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── CALLOUT BOXES ────────────────────────────── */
+  .callout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .callout {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 1rem 1.25rem;
+  }
+  .callout.gold { border-left-color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal2); }
+  .callout.blue { border-left-color: var(--blue2); }
+  .callout h5 {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 6px;
+  }
+  .callout.gold h5 { color: var(--gold); }
+  .callout.teal h5 { color: var(--teal2); }
+  .callout.blue h5 { color: var(--blue2); }
+  .callout p { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .callout strong { color: var(--text); }
+
+  /* ── FOOTER ───────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border2);
+    padding: 2.5rem 4rem;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+    line-height: 1.8;
+  }
+  footer a { color: var(--teal2); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── SCROLL TOP ───────────────────────────────── */
+  #scrolltop {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--accent); color: #fff;
+    border: none; width: 36px; height: 36px;
+    border-radius: 3px; cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.3s; z-index: 300;
+  }
+  #scrolltop.vis { opacity: 1; }
+
+  .hidden { display: none !important; }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 6px; margin-bottom: 2rem;
+  }
+  .toc-item {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 3px; padding: 6px 10px;
+    cursor: pointer; font-size: 11px;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: border-color 0.15s;
+  }
+  .toc-item:hover { border-color: var(--accent); color: #fff; }
+  .toc-rate {
+    font-family: var(--mono); font-size: 10px; color: var(--accent2);
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section id="cover">
+  <div class="cover-eyebrow">NIBRS Sex Offenses Per Capita Report v2 &nbsp;·&nbsp; Interactive Edition</div>
+  <h1 class="cover-title">Sexual Crimes in America:<br><strong>Geographic Prevalence</strong><br>Per Capita Analysis</h1>
+  <p class="cover-desc">All 52 NIBRS-reporting states and territories · 6 offense types · 2019–2024 pooled · 1,163,895 victim records · Annual rates per 100,000 population using Census Vintage 2024 denominators.</p>
+  <div class="cover-stats">
+    <div class="cstat"><span class="cstat-val">1,163,895</span><span class="cstat-label">Total Victim Records</span></div>
+    <div class="cstat"><span class="cstat-val red">57.73</span><span class="cstat-label">Nat'l Combined Rate /100k</span></div>
+    <div class="cstat"><span class="cstat-val gold">6</span><span class="cstat-label">NIBRS Offense Types</span></div>
+    <div class="cstat"><span class="cstat-val teal">6.2×</span><span class="cstat-label">Max vs. Min Rate Spread (CA)</span></div>
+  </div>
+  <div class="cover-source">
+    <span>SOURCE:</span> Jacob Kaplan NIBRS Concatenated Files V11 (openicpsr.org/118281) · Population: U.S. Census Bureau Vintage 2024 (NST-EST2024-POP) · Generated March 15, 2026 · Rates = annual victims per 100,000 · All rates are <em>reported-crime rates</em>, not prevalence. True prevalence estimated 4–10× higher.
+  </div>
+</section>
+
+<!-- STICKY NAV -->
+<div id="topnav">
+  <span class="nav-label">View:</span>
+  <button class="nav-tab active" onclick="showView('overview')">Overview</button>
+  <button class="nav-tab" onclick="showView('rankings')">Rankings</button>
+  <button class="nav-tab" onclick="showView('crossoffense')">Cross-Offense</button>
+  <button class="nav-tab" onclick="showView('normalized')">Normalized Index</button>
+  <button class="nav-tab" onclick="showView('demographics')">Demographics</button>
+  <button class="nav-tab" onclick="showView('caequiv')">CA Equivalent</button>
+  <button class="nav-tab" onclick="showView('coverage')">Coverage Notes</button>
+  <div class="nav-spacer"></div>
+  <span style="font-family:var(--mono);font-size:9px;color:var(--text3);">
+    <span class="coverage-dot dot-high"></span>90–100%
+    <span class="coverage-dot dot-mid" style="margin-left:8px"></span>70–89%
+    <span class="coverage-dot dot-low" style="margin-left:8px"></span>50–69%
+    <span class="coverage-dot dot-vlow" style="margin-left:8px"></span>&lt;50%
+  </span>
+</div>
+
+<!-- ══ OVERVIEW ══════════════════════════════════════ -->
+<div id="view-overview">
+
+<section class="page-section">
+  <div class="section-header">
+    <span class="section-tag">Part 1</span>
+    <h2 class="section-title">National Overview — All Offense Types</h2>
+  </div>
+  <div class="metric-grid">
+    <div class="metric-card"><div class="metric-num">484,364</div><div class="metric-label">Fondling 6-yr Total</div></div>
+    <div class="metric-card"><div class="metric-num">433,155</div><div class="metric-label">Rape 6-yr Total</div></div>
+    <div class="metric-card"><div class="metric-num">100,842</div><div class="metric-label">Sodomy 6-yr Total</div></div>
+    <div class="metric-card"><div class="metric-num">49,387</div><div class="metric-label">Other Sex Offense 6-yr</div></div>
+    <div class="metric-card"><div class="metric-num">48,212</div><div class="metric-label">Statutory Rape 6-yr</div></div>
+    <div class="metric-card"><div class="metric-num accent">40,239</div><div class="metric-label">SA w/ Object 6-yr</div></div>
+    <div class="metric-card"><div class="metric-num gold">7,696</div><div class="metric-label">Incest 6-yr Total</div></div>
+    <div class="metric-card"><div class="metric-num teal">24.35</div><div class="metric-label">Fondling Rate /100k</div></div>
+    <div class="metric-card"><div class="metric-num teal">21.78</div><div class="metric-label">Rape Rate /100k</div></div>
+    <div class="metric-card"><div class="metric-num">5.07</div><div class="metric-label">Sodomy Rate /100k</div></div>
+    <div class="metric-card"><div class="metric-num">2.42</div><div class="metric-label">Stat. Rape Rate /100k</div></div>
+    <div class="metric-card"><div class="metric-num">2.02</div><div class="metric-label">SA w/Object Rate /100k</div></div>
+  </div>
+
+  <div class="callout-grid">
+    <div class="callout">
+      <h5>Fondling is the highest-volume offense</h5>
+      <p>Fondling (NIBRS 11D) accounts for <strong>41.6%</strong> of all sex offense records — the single largest category. It also has the youngest victim age profile of all offenses, reflecting its prevalence in child sexual abuse cases.</p>
+    </div>
+    <div class="callout gold">
+      <h5>Mountain West dominates per-capita rates</h5>
+      <p>Montana, Utah, and North Dakota occupy the top 3 combined-rate positions. All three have <strong>90–100% NIBRS agency participation</strong>, making these among the most reliable rate estimates in the dataset.</p>
+    </div>
+    <div class="callout teal">
+      <h5>Large-state rates are suppressed</h5>
+      <p>California (combined 25.1/100k) and New York (20.1/100k) both have <strong>&lt;50% NIBRS participation</strong>. Their rates should be treated as floors, not true rates. True rates are likely 2–4× higher.</p>
+    </div>
+    <div class="callout blue">
+      <h5>Incest is the most severely undercounted</h5>
+      <p>Research estimates only <strong>2–10%</strong> of intrafamilial sexual abuse reaches law enforcement. Montana's rate of 4.14/100k represents detection, not true prevalence. True rates may be 10–50× higher.</p>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-panel">
+      <h4>Offense Type Share — All Records (2019–2024)</h4>
+      <div style="position:relative;height:220px;"><canvas id="offense-share-chart"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <h4>Top 10 States — Combined 6-Offense Rate /100k</h4>
+      <div style="position:relative;height:220px;"><canvas id="top10-chart"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-panel">
+      <h4>Victim Age Distribution — All Offenses Combined</h4>
+      <div style="position:relative;height:200px;"><canvas id="victim-age-chart"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <h4>Victim Sex &amp; Offender Sex — National</h4>
+      <div style="position:relative;height:200px;"><canvas id="sex-chart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /view-overview -->
+
+<!-- ══ RANKINGS ══════════════════════════════════════ -->
+<div id="view-rankings" class="hidden">
+<section class="page-section">
+  <div class="section-header">
+    <span class="section-tag">Parts 3–7</span>
+    <h2 class="section-title">State Rankings by Offense Type</h2>
+  </div>
+  <p class="section-note">Select an offense type to view per-capita rates for all 52 NIBRS entities. Rate = (6-year total ÷ 6) ÷ average state population × 100,000. Click column headers to sort.</p>
+
+  <div class="offense-tabs" id="offense-tabs">
+    <button class="off-tab active" onclick="setOffense('rape')">Rape (11A)</button>
+    <button class="off-tab" onclick="setOffense('sodomy')">Sodomy (11B)</button>
+    <button class="off-tab" onclick="setOffense('saobj')">SA w/Object (11C)</button>
+    <button class="off-tab" onclick="setOffense('fondling')">Fondling (11D)</button>
+    <button class="off-tab" onclick="setOffense('statutory')">Statutory Rape (36A)</button>
+    <button class="off-tab" onclick="setOffense('incest')">Incest (36B)</button>
+    <button class="off-tab" onclick="setOffense('combined')">Combined All 6</button>
+  </div>
+
+  <div class="rank-table-wrap">
+    <table class="rank-table" id="rank-table">
+      <thead>
+        <tr>
+          <th onclick="sortRank('rank')">#</th>
+          <th onclick="sortRank('state')">State</th>
+          <th onclick="sortRank('total')">6-Yr Total</th>
+          <th onclick="sortRank('annual')">Annual Avg</th>
+          <th onclick="sortRank('rate')" class="sorted">Rate /100k ▼</th>
+          <th>Heat</th>
+          <th>Coverage</th>
+        </tr>
+      </thead>
+      <tbody id="rank-tbody"></tbody>
+    </table>
+  </div>
+</section>
+</div>
+
+<!-- ══ CROSS-OFFENSE ══════════════════════════════════ -->
+<div id="view-crossoffense" class="hidden">
+<section class="page-section">
+  <div class="section-header">
+    <span class="section-tag">Part 8</span>
+    <h2 class="section-title">Cross-Offense Rate Heat Map — All States × All Offenses</h2>
+  </div>
+  <p class="section-note">Each cell shows the annual rate per 100,000 for that offense in that state. Color shading is per-column (each offense scaled to its own maximum). States ranked by combined all-offense annual rate (descending). "—" indicates zero or unreported.</p>
+  <div class="cross-wrap">
+    <table class="cross-table" id="cross-table">
+      <thead>
+        <tr>
+          <th>#</th><th style="text-align:left">State</th>
+          <th>Rape</th><th>Sodomy</th><th>SA/Obj</th>
+          <th>Stat.R</th><th>Fondling</th><th>Incest</th>
+          <th>Combined</th>
+        </tr>
+      </thead>
+      <tbody id="cross-tbody"></tbody>
+    </table>
+  </div>
+</section>
+</div>
+
+<!-- ══ NORMALIZED ══════════════════════════════════════ -->
+<div id="view-normalized" class="hidden">
+<section class="page-section">
+  <div class="section-header">
+    <span class="section-tag">Part 9</span>
+    <h2 class="section-title">Normalized Rate Index (Highest-Rate State = 100)</h2>
+  </div>
+  <p class="section-note">Index = (state rate ÷ reference state rate) × 100. Reference states: Rape → Montana (53.93), Sodomy → Arkansas (19.58), SA/Object → Colorado (10.48), Statutory → South Dakota (14.55), Fondling → Utah (91.40), Incest → Montana (4.136). An index of 50 means that state's rate is half the reference state's.</p>
+
+  <div class="metric-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));margin-bottom:2rem">
+    <div class="metric-card"><div class="metric-num accent">Montana</div><div class="metric-label">Rape Index Ref (53.93/100k)</div></div>
+    <div class="metric-card"><div class="metric-num accent">Arkansas</div><div class="metric-label">Sodomy Index Ref (19.58/100k)</div></div>
+    <div class="metric-card"><div class="metric-num accent">Colorado</div><div class="metric-label">SA/Object Ref (10.48/100k)</div></div>
+    <div class="metric-card"><div class="metric-num accent">South Dakota</div><div class="metric-label">Statutory Ref (14.55/100k)</div></div>
+    <div class="metric-card"><div class="metric-num accent">Utah</div><div class="metric-label">Fondling Index Ref (91.40/100k)</div></div>
+    <div class="metric-card"><div class="metric-num accent">Montana</div><div class="metric-label">Incest Ref (4.136/100k)</div></div>
+  </div>
+
+  <div style="overflow-x:auto;border:1px solid var(--border);border-radius:4px;">
+    <table class="idx-table" id="idx-table">
+      <thead>
+        <tr>
+          <th>#</th><th>State</th>
+          <th>Rape</th><th>Sodomy</th><th>SA/Obj</th>
+          <th>Stat.R</th><th>Fondling</th><th>Incest</th>
+          <th>Comb.5</th><th>Comb.6</th>
+        </tr>
+      </thead>
+      <tbody id="idx-tbody"></tbody>
+    </table>
+  </div>
+</section>
+</div>
+
+<!-- ══ DEMOGRAPHICS ════════════════════════════════════ -->
+<div id="view-demographics" class="hidden">
+<section class="page-section">
+  <div class="section-header">
+    <span class="section-tag">Parts 1–7</span>
+    <h2 class="section-title">National Demographic Profiles</h2>
+  </div>
+  <p class="section-note">All demographics reflect national totals across all 6 offense types combined (N = 1,163,895 victim records). Race/ethnicity data from NIBRS victim segment. Relationship data reflects all sex offenses combined — offense-specific relationship coding requires microdata analysis.</p>
+
+  <div class="demo-grid" id="demo-panels"></div>
+
+  <div class="section-header" style="margin-top:2rem">
+    <span class="section-tag">Part 2</span>
+    <h2 class="section-title">Relationship × Victim Age — All Offenses</h2>
+  </div>
+  <p class="section-note">Family member perpetration accounts for 26.2% of all records. Caregiver relationships: 12.1%. Top 15 relationships by total count shown.</p>
+
+  <div style="overflow-x:auto;border:1px solid var(--border);border-radius:4px;margin-bottom:2rem;">
+    <table class="rel-table">
+      <thead>
+        <tr>
+          <th>Relationship</th>
+          <th>Total</th>
+          <th>Under 18</th>
+          <th>% U18</th>
+          <th>Adult (18+)</th>
+          <th>% Adult</th>
+        </tr>
+      </thead>
+      <tbody id="rel-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="section-header" style="margin-top:2rem">
+    <span class="section-tag">Part 5 Detail</span>
+    <h2 class="section-title">Under-12 Victims — Relationship Concentration</h2>
+  </div>
+  <p class="section-note">230,246 total victims under age 12. Caregiver and family-member relationships dominate this age band.</p>
+  <div style="overflow-x:auto;border:1px solid var(--border);border-radius:4px;margin-bottom:2rem;">
+    <table class="rel-table">
+      <thead><tr><th>Relationship</th><th>Under-12 Count</th><th>% of All Under-12</th><th>% of Rel. That's &lt;12</th><th>All Ages Total</th></tr></thead>
+      <tbody id="u12-tbody"></tbody>
+    </table>
+  </div>
+</section>
+</div>
+
+<!-- ══ CA EQUIVALENT ════════════════════════════════════ -->
+<div id="view-caequiv" class="hidden">
+<section class="page-section">
+  <div class="section-header">
+    <span class="section-tag">Part 12</span>
+    <h2 class="section-title">Population-Normalized: California as Reference (39,355,309)</h2>
+  </div>
+  <p class="section-note">If every state had California's population, what would their annual victim count be? The multiplier answers: how many times more intense is that state's rate environment vs. California's actual rate? Montana at 6.2× means Montana's rate environment produces 6.2× California's victim count at equal population — not that Montana has more total victims.</p>
+
+  <div class="callout-grid">
+    <div class="callout"><h5>Montana: 6.2× California</h5><p>Combined rate 156.47/100k. CA-equivalent annual count: <strong>61,581 victims/yr</strong> vs. California's actual 9,875/yr.</p></div>
+    <div class="callout gold"><h5>Florida is the lowest large-state</h5><p>Combined rate just 12.66/100k — the <strong>lowest of all 52 entities</strong>. CA-equivalent annual count: only 4,982 — less than half California's actual.</p></div>
+    <div class="callout teal"><h5>NY &amp; NJ below CA — but unreliable</h5><p>Both have <strong>&lt;50% NIBRS participation</strong>. Their 0.8× and 0.7× multipliers are almost certainly underestimates.</p></div>
+    <div class="callout blue"><h5>Fondling drives Mountain West rankings</h5><p>Utah's Fondling equivalent (35,969/yr) exceeds its Rape equivalent by <strong>~100%</strong>. High Mountain West rankings are substantially driven by Fondling reporting.</p></div>
+  </div>
+
+  <div class="ca-grid" id="ca-grid"></div>
+</section>
+</div>
+
+<!-- ══ COVERAGE ═════════════════════════════════════════ -->
+<div id="view-coverage" class="hidden">
+<section class="page-section">
+  <div class="section-header">
+    <span class="section-tag">Part 11</span>
+    <h2 class="section-title">NIBRS Coverage Notes &amp; Data Quality Caveats</h2>
+  </div>
+  <p class="section-note">Per capita rates must be interpreted alongside NIBRS agency participation rates. States where fewer agencies report to NIBRS will show artificially lower rates — not necessarily lower true incidence.</p>
+
+  <div class="coverage-grid">
+    <div class="coverage-tier">
+      <h4><span class="coverage-dot dot-high"></span><span style="color:var(--teal2)">Near-Complete (90–100%)</span></h4>
+      <p><strong>Reliability: High</strong> — rates most reliable. These states' rates are the closest to true reported incidence.</p>
+      <div class="states-list">CO, UT, SC, MT, WY, ID, IA, KS, NE, ND, SD, RI, VT, NH, ME, CT, DE, WI, IN, KY, TN, VA, MD, MA, PA</div>
+    </div>
+    <div class="coverage-tier">
+      <h4><span class="coverage-dot dot-mid"></span><span style="color:var(--gold)">High (70–89%)</span></h4>
+      <p><strong>Reliability: Good</strong> — minor gaps; totals reliable. Some under-count possible in rural jurisdictions.</p>
+      <div class="states-list">AK, AR, OR, WA, MN, NC, FL, GA, OK, MO, NM, WV, LA, MS, AL, OH</div>
+    </div>
+    <div class="coverage-tier">
+      <h4><span class="coverage-dot dot-low"></span><span style="color:var(--blue2)">Moderate (50–69%)</span></h4>
+      <p><strong>Reliability: Moderate</strong> — some undercount; rates slightly low. Major metro agencies may vary by year.</p>
+      <div class="states-list">MI, AZ, NV, TX, IL, VA (varies by year)</div>
+    </div>
+    <div class="coverage-tier">
+      <h4><span class="coverage-dot dot-vlow"></span><span style="color:var(--accent2)">Lower (&lt;50%)</span></h4>
+      <p><strong>Use with caution</strong> — rates likely significant underestimates. Treat as floors only.</p>
+      <div class="states-list">NY, NJ, CA, HI, DC</div>
+    </div>
+  </div>
+
+  <div class="callout-grid">
+    <div class="callout">
+      <h5>Texas — Sodomy anomaly</h5>
+      <p>Texas shows disproportionately high Sodomy counts (14,234 — 14.1% of national total). This reflects Texas agencies continuing to use the <strong>legacy Sodomy code</strong> for incidents many other states now code as Rape (11A) under the 2013 revised definition. Texas Rape counts are correspondingly lower.</p>
+    </div>
+    <div class="callout gold">
+      <h5>Illinois — low Fondling anomaly</h5>
+      <p>Illinois shows unusually low Fondling counts relative to population (index 11.4 — second-lowest nationally despite being the 6th-largest state). This likely reflects <strong>incomplete NIBRS participation from Chicago-area agencies</strong> rather than true incidence.</p>
+    </div>
+    <div class="callout teal">
+      <h5>Massachusetts &amp; Wisconsin — Statutory Rape</h5>
+      <p>Both states rank high in Statutory Rape. Both have near-complete NIBRS participation AND active prosecutorial focus on statutory rape reporting. This is a <strong>reporting environment effect</strong> as much as a true incidence difference.</p>
+    </div>
+    <div class="callout blue">
+      <h5>Per capita ≠ prevalence</h5>
+      <p>All rates measure <strong>reported crimes only</strong>. NISVS and NCVS surveys show only 20–25% of rapes — and even fewer other sexual offenses — are ever reported to law enforcement. True prevalence is estimated 4–10× higher than NIBRS rates shown here.</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<footer>
+  <p>NIBRS Sex Offenses Per Capita Report v2 — Interactive Edition · Generated March 15, 2026</p>
+  <p>Source: Jacob Kaplan NIBRS Concatenated Files V11 · <a href="https://openicpsr.org/openicpsr/project/118281" target="_blank">openicpsr.org/118281</a></p>
+  <p>Population denominators: U.S. Census Bureau Vintage 2024 (NST-EST2024-POP) · N = 1,163,895 sex-offense victim records · 2019–2024 pooled</p>
+  <p>Rates = annual victims per 100,000 population · All rates reflect <em>reported victimization rates</em>, not true prevalence.</p>
+  <p style="margin-top:1rem;color:var(--accent2)">⚠ States with higher NIBRS agency participation may show higher reported rates — not necessarily higher true incidence. Interpret rates alongside coverage notes.</p>
+</footer>
+
+<button id="scrolltop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// DATA — sourced directly from NIBRS_SexOffenses_PerCapita_Report_v2
+// All rates are annual per 100,000, 6-year pooled 2019–2024
+// ══════════════════════════════════════════════════════════════
+
+const STATES = [
+  // id, name, rape, sodomy, saobj, statutory, fondling, incest, combined5, combined6, coverage
+  // coverage: H=90-100%, G=70-89%, M=50-69%, L=<50%
+  ['MT','Montana',        53.93, 4.28,  1.70, 3.56,  88.86, 4.136, 152.34, 156.47, 'H'],
+  ['UT','Utah',           45.01, 8.99,  2.52, 3.84,  91.40, 0.634, 151.75, 152.39, 'H'],
+  ['ND','North Dakota',   47.43, 5.29,  1.20, 8.82,  79.93, 0.828, 142.68, 143.51, 'H'],
+  ['NH','New Hampshire',  34.32, 3.72,  2.89, 7.14,  72.33, 2.062, 120.40, 122.46, 'H'],
+  ['SD','South Dakota',   50.58, 3.45,  0.56,14.55,  48.69, 1.821, 117.83, 119.65, 'H'],
+  ['ID','Idaho',          37.67, 6.49,  8.25, 3.32,  60.38, 0.717, 116.12, 116.84, 'H'],
+  ['MI','Michigan',       41.92,15.98,  5.23, 0.48,  50.54, 0.175, 114.15, 114.33, 'M'],
+  ['CO','Colorado',       42.83,11.96, 10.48, 2.11,  43.59, 1.259, 110.96, 112.22, 'H'],
+  ['OK','Oklahoma',       38.45, 8.59,  5.09, 3.35,  49.04, 1.679, 104.52, 106.20, 'G'],
+  ['AR','Arkansas',       52.50,19.58,  2.72, 2.17,  22.82, 0.507,  99.79, 100.29, 'G'],
+  ['OR','Oregon',         30.22, 6.95,  4.19, 7.65,  38.90, 1.565,  87.91,  89.48, 'G'],
+  ['KS','Kansas',         34.48, 6.89,  0.00, 2.88,  44.97, 0.132,  89.21,  89.34, 'H'],
+  ['NV','Nevada',         35.58, 5.19,  1.55, 1.75,  41.55, 0.144,  85.61,  85.75, 'M'],
+  ['TN','Tennessee',      32.22, 6.06,  2.81, 5.31,  38.69, 0.423,  85.09,  85.52, 'G'],
+  ['NM','New Mexico',     35.24, 6.07,  3.31, 2.29,  37.74, 0.238,  84.65,  84.89, 'G'],
+  ['WI','Wisconsin',      27.40, 5.80,  2.59,10.43,  33.47, 0.340,  79.69,  80.03, 'H'],
+  ['WA','Washington',     34.34, 3.83,  1.08, 2.91,  34.26, 0.695,  76.40,  77.10, 'G'],
+  ['SC','South Carolina', 31.61, 6.58,  3.28, 4.50,  30.57, 0.505,  76.54,  77.04, 'H'],
+  ['OH','Ohio',           39.56, 3.98,  0.00, 1.86,  30.86, 0.327,  76.27,  76.60, 'G'],
+  ['WV','West Virginia',  38.76, 4.79,  3.20, 1.34,  25.47, 1.509,  73.57,  75.08, 'G'],
+  ['KY','Kentucky',       25.75, 9.74,  0.00, 2.78,  35.29, 0.570,  73.56,  74.13, 'H'],
+  ['MN','Minnesota',      28.53, 4.33,  1.80, 0.02,  37.91, 0.124,  72.58,  72.70, 'G'],
+  ['TX','Texas',          34.80, 8.09,  3.82, 1.46,  23.10, 0.224,  71.27,  71.49, 'M'],
+  ['NE','Nebraska',       27.51, 4.49,  4.14, 2.42,  32.00, 0.891,  70.55,  71.44, 'H'],
+  ['AK','Alaska',         33.36, 6.89,  4.66, 1.16,  23.35, 0.318,  69.42,  69.74, 'G'],
+  ['IA','Iowa',           31.37, 5.95,  4.04, 2.16,  25.65, 0.700,  69.17,  69.87, 'H'],
+  ['VA','Virginia',       19.96, 6.23,  4.50, 1.50,  35.01, 0.344,  67.21,  67.55, 'H'],
+  ['WY','Wyoming',        32.33, 3.43,  2.25, 1.18,  27.61, 1.842,  66.78,  68.62, 'H'],
+  ['NC','North Carolina', 21.66, 4.06,  2.65, 5.14,  31.50, 1.017,  65.02,  66.03, 'G'],
+  ['RI','Rhode Island',   29.73, 4.69,  3.60, 2.05,  24.34, 0.228,  64.42,  64.65, 'H'],
+  ['IN','Indiana',        20.88, 4.46,  0.92, 2.06,  36.07, 0.391,  64.40,  64.79, 'H'],
+  ['HI','Hawaii',         23.55, 4.28,  3.99, 1.60,  30.97, 0.200,  64.38,  64.58, 'L'],
+  ['GA','Georgia',        15.13, 7.61,  3.29, 3.34,  34.64, 0.359,  64.01,  64.37, 'G'],
+  ['ME','Maine',          28.26, 2.60,  0.36, 4.09,  28.45, 0.739,  63.75,  64.49, 'H'],
+  ['MO','Missouri',       22.85,16.62,  1.78, 3.72,  17.76, 0.685,  62.73,  63.41, 'G'],
+  ['DE','Delaware',       19.70, 4.98,  1.36, 1.90,  33.32, 0.067,  61.26,  61.33, 'H'],
+  ['DC','Dist. of Columbia',18.11,2.28, 2.09, 0.05,  38.52, 0.048,  61.05,  61.10, 'L'],
+  ['MA','Massachusetts',  21.95, 4.88,  0.73, 9.40,  18.41, 1.129,  55.37,  56.50, 'H'],
+  ['VT','Vermont',        37.12, 2.75,  0.29, 2.80,  12.05, 0.400,  55.01,  55.41, 'H'],
+  ['CT','Connecticut',    15.62, 2.21,  1.40, 3.21,  25.37, 0.532,  47.81,  48.34, 'H'],
+  ['GU','Guam',           14.29, 3.67,  0.10, 0.40,  24.80, 0.992,  43.25,  44.25, 'G'],
+  ['MD','Maryland',       15.61, 4.93,  1.61, 0.76,  20.07, 0.465,  42.99,  43.45, 'H'],
+  ['AZ','Arizona',        12.96, 2.67,  1.11, 3.98,  19.02, 0.222,  39.76,  39.98, 'M'],
+  ['LA','Louisiana',      14.80, 3.03,  1.34, 3.94,  15.93, 0.209,  39.04,  39.25, 'G'],
+  ['IL','Illinois',       23.11, 0.91,  0.08, 0.88,  11.40, 0.400,  36.38,  36.78, 'M'],
+  ['MS','Mississippi',    13.70, 1.44,  1.52, 2.14,   8.84, 0.191,  27.65,  27.84, 'G'],
+  ['PA','Pennsylvania',    8.11, 3.44,  0.55, 1.61,  12.77, 0.226,  26.47,  26.70, 'H'],
+  ['AL','Alabama',        12.93, 3.99,  1.57, 2.67,   5.26, 0.172,  26.42,  26.59, 'G'],
+  ['CA','California',      7.87, 2.15,  1.27, 1.55,  12.24, 0.017,  25.07,  25.09, 'L'],
+  ['NY','New York',        4.57, 2.76,  0.24, 0.58,  11.96, 0.021,  20.11,  20.13, 'L'],
+  ['NJ','New Jersey',      6.08, 0.81,  0.44, 0.45,   9.66, 0.117,  17.44,  17.56, 'L'],
+  ['FL','Florida',         7.24, 1.01,  0.50, 0.81,   2.98, 0.117,  12.54,  12.66, 'G'],
+];
+
+// 6-year totals for rank table (from PDF)
+const TOTALS = {
+  rape:     {MT:3482,UT:8725,ND:2177,NH:2813,SD:2695,ID:4096,MI:25126,CO:14863,OK:9135,AR:9528,OR:7649,KS:6026,NV:6662,TN:13395,NM:4434,WI:9588,WA:15849,SC:9765,OH:27985,WV:4161,KY:6952,MN:9682,TX:61198,NE:3210,AK:1467,IA:6004,VA:10337,WY:1123,NC:13568,RI:1957,IN:8501,HI:1999,GA:9722,ME:2296,MO:8437,DE:1170,DC:754,MA:9194,VT:1392,CT:3380,GU:144,MD:5773,AZ:5660,LA:4110,IL:17612,MS:2445,PA:6310,AL:3909,CA:18482,NY:5392,NJ:3383,FL:9438},
+  sodomy:   {MT:276,UT:1742,ND:243,NH:305,SD:184,ID:706,MI:9581,CO:4149,OK:2042,AR:3554,OR:1760,KS:1204,NV:972,TN:2521,NM:764,WI:2029,WA:1767,SC:2031,OH:2817,WV:514,KY:2630,MN:1469,TX:14234,NE:524,AK:303,IA:1139,VA:3226,WY:119,NC:2546,RI:309,IN:1816,HI:363,GA:4892,ME:211,MO:6135,DE:296,DC:95,MA:2042,VT:103,CT:479,GU:37,MD:1825,AZ:1167,LA:841,IL:691,MS:257,PA:2673,AL:1206,CA:5040,NY:3254,NJ:448,FL:1311},
+  saobj:    {MT:110,UT:489,ND:55,NH:237,SD:30,ID:897,MI:3136,CO:3636,OK:1210,AR:494,OR:1060,KS:0,NV:290,TN:1167,NM:417,WI:907,WA:497,SC:1014,OH:3,WV:344,KY:0,MN:611,TX:6712,NE:483,AK:205,IA:773,VA:2331,WY:78,NC:1658,RI:237,IN:376,HI:339,GA:2115,ME:29,MO:659,DE:81,DC:87,MA:306,VT:11,CT:302,GU:1,MD:597,AZ:486,LA:373,IL:59,MS:272,PA:425,AL:475,CA:2987,NY:281,NJ:244,FL:653},
+  statutory:{MT:230,UT:745,ND:405,NH:585,SD:775,ID:361,MI:286,CO:731,OK:795,AR:393,OR:1936,KS:503,NV:327,TN:2207,NM:288,WI:3651,WA:1342,SC:1390,OH:1317,WV:144,KY:751,MN:6,TX:2575,NE:282,AK:51,IA:414,VA:779,WY:41,NC:3220,RI:135,IN:839,HI:136,GA:2148,ME:332,MO:1374,DE:113,DC:2,MA:3938,VT:105,CT:694,GU:4,MD:281,AZ:1739,LA:1095,IL:672,MS:382,PA:1250,AL:807,CA:3638,NY:686,NJ:251,FL:1061},
+  fondling: {MT:5737,UT:17718,ND:3669,NH:5928,SD:2594,ID:6565,MI:30295,CO:15129,OK:11653,AR:4142,OR:9844,KS:7859,NV:7780,TN:16082,NM:4748,WI:11711,WA:15812,SC:9441,OH:21833,WV:2734,KY:9528,MN:12866,TX:40617,NE:3734,AK:1027,IA:4910,VA:18131,WY:959,NC:19734,RI:1602,IN:14686,HI:2629,GA:22261,ME:2311,MO:6556,DE:1979,DC:1604,MA:7713,VT:452,CT:5489,GU:250,MD:7425,AZ:8305,LA:4424,IL:8684,MS:1577,PA:9932,AL:1592,CA:28753,NY:14099,NJ:5370,FL:3891},
+  incest:   {MT:267,UT:123,ND:38,NH:169,SD:97,ID:78,MI:105,CO:437,OK:399,AR:92,OR:396,KS:23,NV:27,TN:176,NM:30,WI:119,WA:321,SC:156,OH:231,WV:162,KY:154,MN:42,TX:394,NE:104,AK:14,IA:134,VA:178,WY:64,NC:637,RI:15,IN:159,HI:17,GA:231,ME:60,MO:253,DE:4,DC:2,MA:473,VT:15,CT:115,GU:10,MD:172,AZ:97,LA:58,IL:305,MS:34,PA:176,AL:52,CA:39,NY:25,NJ:65,FL:152},
+};
+
+const COVERAGE_MAP = {H:'High (90-100%)',G:'Good (70-89%)',M:'Moderate (50-69%)',L:'Low (<50%)'};
+const COVERAGE_CLASS = {H:'cov-high',G:'cov-good',M:'cov-mod',L:'cov-low'};
+
+// Normalized index data (from Part 9 of PDF)
+const IDX = {
+  MT:[100.0,21.9,16.2,24.5,97.2,100.0,100.0,100.0],
+  UT:[83.5,45.9,24.0,26.4,100.0,15.3,99.6,97.4],
+  ND:[87.9,27.0,11.5,60.6,87.5,20.0,93.7,91.7],
+  NH:[63.6,19.0,27.6,49.1,79.1,49.9,79.0,78.3],
+  SD:[93.8,17.6,5.3,100.0,53.3,44.0,77.3,76.5],
+  ID:[69.8,33.1,78.7,22.8,66.1,17.3,76.2,74.7],
+  MI:[77.7,81.6,49.9,3.3,55.3,4.2,74.9,73.1],
+  CO:[79.4,61.1,100.0,14.5,47.7,30.4,72.8,71.7],
+  OK:[71.3,43.9,48.6,23.0,53.7,40.6,68.6,67.9],
+  AR:[97.3,100.0,26.0,14.9,25.0,12.3,65.5,64.1],
+  OR:[56.0,35.5,40.0,52.6,42.6,37.8,57.7,57.2],
+  KS:[63.9,35.2,0.0,19.8,49.2,3.2,58.6,57.1],
+  NV:[66.0,26.5,14.8,12.0,45.5,3.5,56.2,54.8],
+  TN:[59.7,30.9,26.8,36.5,42.3,10.2,55.9,54.7],
+  NM:[65.3,31.0,31.6,15.7,41.3,5.8,55.6,54.3],
+  WI:[50.8,29.6,24.7,71.7,36.6,8.2,52.3,51.1],
+  WA:[63.7,19.6,10.3,20.0,37.5,16.8,50.2,49.3],
+  SC:[58.6,33.6,31.3,30.9,33.4,12.2,50.2,49.2],
+  OH:[73.4,20.3,0.0,12.8,33.8,7.9,50.1,49.0],
+  WV:[71.9,24.5,30.5,9.2,27.9,36.5,48.3,48.0],
+  KY:[47.7,49.7,0.0,19.1,38.6,13.8,48.3,47.4],
+  MN:[52.9,22.1,17.2,0.1,41.5,3.0,47.6,46.5],
+  TX:[64.5,41.3,36.5,10.0,25.3,5.4,46.8,45.7],
+  NE:[51.0,22.9,39.5,16.6,35.0,21.5,46.3,45.7],
+  AK:[61.9,35.2,44.5,8.0,25.5,7.7,45.6,44.6],
+  IA:[58.2,30.4,38.5,14.8,28.1,16.9,45.4,44.7],
+  VA:[37.0,31.8,42.9,10.3,38.3,8.3,44.1,43.2],
+  WY:[59.9,17.5,21.5,8.1,30.2,44.5,43.8,43.9],
+  NC:[40.2,20.7,25.3,35.3,34.5,24.6,42.7,42.2],
+  IN:[38.7,22.8,8.8,14.2,39.5,9.5,42.3,41.4],
+  RI:[55.1,24.0,34.4,14.1,26.6,5.5,42.3,41.3],
+  HI:[43.7,21.9,38.1,11.0,33.9,4.8,42.3,41.3],
+  ME:[52.4,13.3,3.4,28.1,31.1,17.9,41.8,41.2],
+  GA:[28.1,38.9,31.4,23.0,37.9,8.7,42.0,41.1],
+  MO:[42.4,84.9,17.0,25.6,19.4,16.6,41.2,40.5],
+  DE:[36.5,25.4,13.0,13.1,36.5,1.6,40.2,39.2],
+  DC:[33.6,11.6,19.9,0.3,42.1,1.2,40.1,39.0],
+  MA:[40.7,24.9,7.0,64.6,20.1,27.3,36.3,36.1],
+  VT:[68.8,14.0,2.8,19.2,13.2,9.7,36.1,35.4],
+  CT:[29.0,11.3,13.4,22.1,27.8,12.9,31.4,30.9],
+  GU:[26.5,18.7,1.0,2.7,27.1,24.0,28.4,28.3],
+  MD:[28.9,25.2,15.4,5.2,22.0,11.2,28.2,27.8],
+  AZ:[24.0,13.6,10.6,27.4,20.8,5.4,26.1,25.6],
+  LA:[27.4,15.5,12.8,27.1,17.4,5.1,25.6,25.1],
+  IL:[42.9,4.6,0.8,6.0,12.5,9.7,23.9,23.5],
+  MS:[25.4,7.4,14.5,14.7,9.7,4.6,18.2,17.8],
+  PA:[15.0,17.6,5.2,11.1,14.0,5.5,17.4,17.1],
+  AL:[24.0,20.4,15.0,18.4,5.8,4.2,17.3,17.0],
+  CA:[14.6,11.0,12.1,10.7,13.4,0.4,16.5,16.0],
+  NY:[8.5,14.1,2.3,4.0,13.1,0.5,13.2,12.9],
+  NJ:[11.3,4.1,4.2,3.1,10.6,2.8,11.4,11.2],
+  FL:[13.4,5.2,4.8,5.6,3.3,2.8,8.2,8.1],
+};
+
+// CA-equivalent multipliers from PDF Part 12
+const CA_MULT = {
+  MT:6.2,UT:6.1,ND:5.7,NH:4.9,SD:4.8,ID:4.7,MI:4.6,CO:4.5,OK:4.2,AR:4.0,
+  OR:3.6,KS:3.6,NV:3.4,TN:3.4,NM:3.4,WI:3.2,WA:3.1,SC:3.1,OH:3.1,WV:3.0,
+  KY:3.0,MN:2.9,TX:2.8,NE:2.8,IA:2.8,AK:2.8,WY:2.7,VA:2.7,NC:2.6,IN:2.6,
+  RI:2.6,HI:2.6,ME:2.6,GA:2.6,MO:2.5,DE:2.4,DC:2.4,MA:2.3,VT:2.2,CT:1.9,
+  GU:1.8,MD:1.7,AZ:1.6,LA:1.6,IL:1.5,MS:1.1,PA:1.1,AL:1.1,CA:1.0,NY:0.8,NJ:0.7,FL:0.5
+};
+
+// Relationship data from PDF Part 8
+const RELATIONSHIPS = [
+  {rel:'Acquaintance',total:224445,u18:115729,adult:108716},
+  {rel:'Relationship Unknown',total:127745,u18:61334,adult:66411},
+  {rel:'Otherwise Known',total:108665,u18:61808,adult:46857},
+  {rel:'Other Family Member ★',total:82853,u18:71021,adult:11832},
+  {rel:'Stranger',total:79038,u18:20713,adult:58325},
+  {rel:'Victim Was Child ★',total:73435,u18:66921,adult:6514},
+  {rel:'Boyfriend/Girlfriend',total:71297,u18:32941,adult:38356},
+  {rel:'Friend',total:68234,u18:37762,adult:30472},
+  {rel:'Sibling ★',total:39215,u18:35936,adult:3279},
+  {rel:'Step-Child ★',total:30570,u18:26667,adult:3903},
+  {rel:'Ex-Relationship',total:23760,u18:7189,adult:16571},
+  {rel:'Grandchild ★',total:18976,u18:17823,adult:1153},
+  {rel:'Spouse ★',total:15903,u18:75,adult:15828},
+  {rel:'Child of BF/GF ★',total:13656,u18:12826,adult:830},
+  {rel:'Neighbor',total:11975,u18:6900,adult:5075},
+];
+
+const U12_DATA = [
+  {rel:'Victim Was Child',u12:41157,pctU12:17.9,pctOfRel:56.0,allAges:73435},
+  {rel:'Other Family Member',u12:38922,pctU12:16.9,pctOfRel:47.0,allAges:82853},
+  {rel:'Acquaintance',u12:25982,pctU12:11.3,pctOfRel:11.6,allAges:224445},
+  {rel:'Sibling',u12:23561,pctU12:10.3,pctOfRel:60.1,allAges:39215},
+  {rel:'Otherwise Known',u12:21805,pctU12:9.5,pctOfRel:20.1,allAges:108665},
+  {rel:'Relationship Unknown',u12:20100,pctU12:8.7,pctOfRel:15.7,allAges:127745},
+  {rel:'Grandchild',u12:11481,pctU12:5.0,pctOfRel:60.5,allAges:18976},
+  {rel:'Step-Child',u12:10350,pctU12:4.5,pctOfRel:33.9,allAges:30570},
+  {rel:'Friend',u12:7992,pctU12:3.5,pctOfRel:11.7,allAges:68234},
+  {rel:'Child of BF/GF',u12:7195,pctU12:3.1,pctOfRel:52.7,allAges:13656},
+  {rel:'Step-Sibling',u12:6558,pctU12:2.9,pctOfRel:57.0,allAges:11511},
+  {rel:'Stranger',u12:4490,pctU12:2.0,pctOfRel:5.7,allAges:79038},
+  {rel:'Neighbor',u12:3705,pctU12:1.6,pctOfRel:30.9,allAges:11975},
+  {rel:'Babysittee',u12:2832,pctU12:1.2,pctOfRel:74.0,allAges:3829},
+  {rel:'Step-Parent',u12:2079,pctU12:0.9,pctOfRel:33.2,allAges:6269},
+];
+
+// ══════════════════════════════════════════════════════════════
+// VIEW CONTROLLER
+// ══════════════════════════════════════════════════════════════
+const VIEWS = ['overview','rankings','crossoffense','normalized','demographics','caequiv','coverage'];
+function showView(v) {
+  VIEWS.forEach(id => {
+    document.getElementById('view-'+id).classList.toggle('hidden', id !== v);
+  });
+  document.querySelectorAll('.nav-tab').forEach((btn,i) => {
+    btn.classList.toggle('active', VIEWS[i] === v);
+  });
+  if (v === 'rankings') renderRankTable();
+  if (v === 'crossoffense') renderCrossTable();
+  if (v === 'normalized') renderNormTable();
+  if (v === 'demographics') renderDemographics();
+  if (v === 'caequiv') renderCAGrid();
+}
+
+// ══════════════════════════════════════════════════════════════
+// OVERVIEW CHARTS
+// ══════════════════════════════════════════════════════════════
+let chartsBuilt = false;
+function buildOverviewCharts() {
+  if (chartsBuilt) return;
+  chartsBuilt = true;
+
+  // Offense share donut
+  new Chart(document.getElementById('offense-share-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Fondling 41.6%','Rape 37.2%','Sodomy 8.7%','Other 4.2%','Statutory 4.1%','SA/Obj 3.5%','Incest 0.7%'],
+      datasets: [{
+        data: [484364,433155,100842,49387,48212,40239,7696],
+        backgroundColor: ['#2a9c8a','#c94040','#c9932a','#4d6278','#3a7bd5','#8a5cf5','#6a8f6a'],
+        borderWidth: 0, hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'right',
+          labels: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' }, boxWidth: 10, padding: 8 }
+        }
+      }
+    }
+  });
+
+  // Top 10 combined
+  const top10 = STATES.slice(0,10);
+  new Chart(document.getElementById('top10-chart'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(s => s[0]),
+      datasets: [{
+        data: top10.map(s => s[8]),
+        backgroundColor: top10.map(s => {
+          const r = s[8];
+          return r>140?'#c94040':r>100?'#d05830':r>80?'#c9932a':'#2a9c8a';
+        }),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' } }, grid: { display: false } },
+        y: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+
+  // Victim age
+  new Chart(document.getElementById('victim-age-chart'), {
+    type: 'bar',
+    data: {
+      labels: ['0–5','6–9','10–11','12–14','15–17','18–24','25–34','35–49','50–64','65+'],
+      datasets: [{
+        data: [82790,101456,64367,198070,204061,170016,140466,115584,42485,15138],
+        backgroundColor: '#c94040', borderWidth: 0
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7f96b0', font: { size: 9, family: 'IBM Plex Mono' }, maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Sex chart
+  new Chart(document.getElementById('sex-chart'), {
+    type: 'bar',
+    data: {
+      labels: ['Victim: Female','Victim: Male','Offender: Male','Offender: Female'],
+      datasets: [{
+        data: [84.4, 13.9, 84.0, 5.4],
+        backgroundColor: ['#2a9c8a','#3a7bd5','#c94040','#c9932a'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7f96b0', font: { size: 9, family: 'IBM Plex Mono' }, maxRotation: 25 }, grid: { display: false } },
+        y: { ticks: { color: '#7f96b0', font: { size: 10, family: 'IBM Plex Mono' }, callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.04)' }, max: 100 }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// RANKINGS TABLE
+// ══════════════════════════════════════════════════════════════
+let currentOffense = 'rape';
+const OFFENSE_IDX = {rape:2, sodomy:3, saobj:4, statutory:5, fondling:6, incest:7, combined:8};
+const OFFENSE_NAMES = {rape:'Rape (11A)',sodomy:'Sodomy (11B)',saobj:'SA w/Object (11C)',statutory:'Statutory Rape (36A)',fondling:'Fondling (11D)',incest:'Incest (36B)',combined:'Combined All 6 Offenses'};
+const OFFENSE_MAX  = {rape:53.93,sodomy:19.58,saobj:10.48,statutory:14.55,fondling:91.40,incest:4.136,combined:156.47};
+
+function setOffense(off) {
+  currentOffense = off;
+  document.querySelectorAll('.off-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderRankTable();
+}
+
+function rateColor(rate, max) {
+  const pct = rate / max;
+  if (pct >= 0.85) return '#c94040';
+  if (pct >= 0.65) return '#d05830';
+  if (pct >= 0.45) return '#c9932a';
+  if (pct >= 0.25) return '#7da8c4';
+  return '#4d6278';
+}
+
+let rankSortDir = 'asc';
+let rankSortField = 'rank';
+function sortRank(field) {
+  if (rankSortField === field) rankSortDir = rankSortDir === 'asc' ? 'desc' : 'asc';
+  else { rankSortField = field; rankSortDir = field === 'state' ? 'asc' : 'desc'; }
+  renderRankTable();
+}
+
+function renderRankTable() {
+  const idx = currentOffense === 'combined' ? 8 : OFFENSE_IDX[currentOffense];
+  const max = OFFENSE_MAX[currentOffense];
+  const offKey = currentOffense === 'combined' ? null : currentOffense;
+
+  let rows = STATES.map((s, i) => ({
+    rank: i+1,
+    id: s[0], name: s[1],
+    rate: currentOffense === 'combined' ? s[8] : s[idx],
+    total: offKey ? (TOTALS[offKey]?.[s[0]] ?? 0) : 0,
+    annual: offKey ? Math.round((TOTALS[offKey]?.[s[0]] ?? 0) / 6) : 0,
+    coverage: s[10]
+  }));
+
+  // re-rank by selected offense rate
+  rows.sort((a,b) => b.rate - a.rate);
+  rows.forEach((r, i) => r.rank = i+1);
+
+  if (rankSortField !== 'rank') {
+    rows.sort((a,b) => {
+      const av = a[rankSortField], bv = b[rankSortField];
+      const d = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
+      return rankSortDir === 'asc' ? d : -d;
+    });
+  }
+
+  const tbody = document.getElementById('rank-tbody');
+  tbody.innerHTML = rows.map(r => {
+    const pct = Math.round((r.rate / max) * 100);
+    const col = rateColor(r.rate, max);
+    return `<tr>
+      <td class="rank-num">${r.rank}</td>
+      <td class="state-name-cell">${r.name}</td>
+      <td style="font-family:var(--mono);color:var(--text2)">${r.total > 0 ? r.total.toLocaleString() : '—'}</td>
+      <td style="font-family:var(--mono);color:var(--text2)">${r.annual > 0 ? r.annual.toLocaleString() : '—'}</td>
+      <td class="rate-cell" style="color:${col}">${r.rate.toFixed(2)}</td>
+      <td class="heat-cell"><div class="heat-bar-bg"><div class="heat-bar" style="width:${pct}%;background:${col}"></div></div></td>
+      <td><span class="coverage-badge ${COVERAGE_CLASS[r.coverage]}">${r.coverage === 'H' ? '90–100%' : r.coverage === 'G' ? '70–89%' : r.coverage === 'M' ? '50–69%' : '<50%'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CROSS-OFFENSE TABLE
+// ══════════════════════════════════════════════════════════════
+function heatClass(val, max) {
+  if (val === 0 || val === null) return 'heat0';
+  const p = val / max;
+  if (p >= 0.85) return 'heat8';
+  if (p >= 0.70) return 'heat7';
+  if (p >= 0.55) return 'heat6';
+  if (p >= 0.40) return 'heat5';
+  if (p >= 0.28) return 'heat4';
+  if (p >= 0.16) return 'heat3';
+  if (p >= 0.08) return 'heat2';
+  return 'heat1';
+}
+const MAXES = {rape:53.93,sodomy:19.58,saobj:10.48,stat:14.55,fondl:91.40,incest:4.136};
+
+function renderCrossTable() {
+  const tbody = document.getElementById('cross-tbody');
+  if (tbody.children.length) return;
+  tbody.innerHTML = STATES.map((s,i) => `<tr>
+    <td style="color:var(--text3);font-family:var(--mono)">${i+1}</td>
+    <td>${s[1]}</td>
+    <td class="${heatClass(s[2],MAXES.rape)}">${s[2].toFixed(2)}</td>
+    <td class="${heatClass(s[3],MAXES.sodomy)}">${s[3].toFixed(2)}</td>
+    <td class="${heatClass(s[4],MAXES.saobj)}">${s[4] === 0 ? '—' : s[4].toFixed(2)}</td>
+    <td class="${heatClass(s[5],MAXES.stat)}">${s[5].toFixed(2)}</td>
+    <td class="${heatClass(s[6],MAXES.fondl)}">${s[6].toFixed(2)}</td>
+    <td class="${heatClass(s[7],MAXES.incest)}">${s[7].toFixed(3)}</td>
+    <td class="combined-cell">${s[8].toFixed(2)}</td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// NORMALIZED INDEX TABLE
+// ══════════════════════════════════════════════════════════════
+function idxClass(v) {
+  if (v >= 95) return 'idx-100';
+  if (v >= 60) return 'idx-hi';
+  if (v >= 30) return 'idx-mid';
+  if (v >= 10) return 'idx-lo';
+  return 'idx-vlo';
+}
+
+function renderNormTable() {
+  const tbody = document.getElementById('idx-tbody');
+  if (tbody.children.length) return;
+  tbody.innerHTML = STATES.map((s,i) => {
+    const ix = IDX[s[0]] || [0,0,0,0,0,0,0,0];
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${s[1]}</td>
+      ${ix.slice(0,6).map(v => `<td class="${idxClass(v)}">${v === 0 ? '—' : v.toFixed(1)}</td>`).join('')}
+      <td class="${idxClass(ix[6])}">${ix[6].toFixed(1)}</td>
+      <td class="${idxClass(ix[7])}">${ix[7].toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// DEMOGRAPHICS
+// ══════════════════════════════════════════════════════════════
+function renderDemographics() {
+  const wrap = document.getElementById('demo-panels');
+  if (wrap.children.length) return;
+
+  const panels = [
+    {
+      title:'Victim Race / Ethnicity — All Offenses',
+      rows:[
+        {label:'White',pct:70.2,color:'#2a9c8a'},
+        {label:'Black/African Am.',pct:18.7,color:'#c94040'},
+        {label:'Unknown',pct:6.5,color:'#4d6278'},
+        {label:'Asian',pct:1.5,color:'#3a7bd5'},
+        {label:'Am. Indian/AK Native',pct:1.4,color:'#c9932a'},
+        {label:'Native Hawaiian/PI',pct:0.3,color:'#8a5cf5'},
+      ]
+    },
+    {
+      title:'Offender Race / Ethnicity',
+      rows:[
+        {label:'White',pct:56.8,color:'#2a9c8a'},
+        {label:'Black/African Am.',pct:21.9,color:'#c94040'},
+        {label:'Unknown',pct:9.7,color:'#4d6278'},
+        {label:'Asian',pct:1.5,color:'#3a7bd5'},
+        {label:'Am. Indian/AK Native',pct:1.2,color:'#c9932a'},
+        {label:'Native Hawaiian/PI',pct:0.3,color:'#8a5cf5'},
+      ]
+    },
+    {
+      title:'Offender Age Distribution',
+      rows:[
+        {label:'Under 18',pct:17.8,color:'#c94040'},
+        {label:'35–44',pct:15.4,color:'#d05830'},
+        {label:'30–34',pct:9.3,color:'#c9932a'},
+        {label:'45–54',pct:8.8,color:'#8a9c6a'},
+        {label:'55+',pct:8.8,color:'#4d9080'},
+        {label:'25–29',pct:8.6,color:'#3a7bd5'},
+        {label:'18–20',pct:7.8,color:'#2a9c8a'},
+        {label:'21–24',pct:7.1,color:'#5dc4b4'},
+      ]
+    },
+    {
+      title:'Incest — Victim Age Profile',
+      rows:[
+        {label:'12–14',pct:23.1,color:'#c94040'},
+        {label:'15–17',pct:19.8,color:'#d05830'},
+        {label:'6–9',pct:15.1,color:'#c9932a'},
+        {label:'0–5',pct:11.1,color:'#8a9c6a'},
+        {label:'18–24',pct:10.2,color:'#3a7bd5'},
+        {label:'10–11',pct:9.2,color:'#2a9c8a'},
+        {label:'25–34',pct:5.2,color:'#4d9080'},
+        {label:'35+',pct:4.9,color:'#5dc4b4'},
+      ]
+    },
+  ];
+
+  panels.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'demo-panel';
+    div.innerHTML = `<h4>${p.title}</h4>`
+      + p.rows.map(r => `<div class="demo-row">
+        <div class="demo-label">${r.label}</div>
+        <div class="demo-bar-wrap"><div class="demo-bar" style="width:${r.pct}%;background:${r.color}"></div></div>
+        <div class="demo-pct">${r.pct}%</div>
+      </div>`).join('');
+    wrap.appendChild(div);
+  });
+
+  // Relationship table
+  const relTbody = document.getElementById('rel-tbody');
+  relTbody.innerHTML = RELATIONSHIPS.map(r => {
+    const u18pct = ((r.u18/r.total)*100).toFixed(1);
+    const adpct  = ((r.adult/r.total)*100).toFixed(1);
+    const cls = u18pct >= 85 ? 'rel-u18-high' : u18pct >= 50 ? 'rel-u18-mid' : 'rel-u18-lo';
+    return `<tr>
+      <td>${r.rel}</td>
+      <td>${r.total.toLocaleString()}</td>
+      <td>${r.u18.toLocaleString()}</td>
+      <td class="${cls}">${u18pct}%</td>
+      <td>${r.adult.toLocaleString()}</td>
+      <td class="rel-pct">${adpct}%</td>
+    </tr>`;
+  }).join('');
+
+  // Under-12 table
+  const u12Tbody = document.getElementById('u12-tbody');
+  u12Tbody.innerHTML = U12_DATA.map(r => `<tr>
+    <td>${r.rel}</td>
+    <td>${r.u12.toLocaleString()}</td>
+    <td>${r.pctU12}%</td>
+    <td style="color:var(--accent2);font-weight:500">${r.pctOfRel}%</td>
+    <td style="color:var(--text2)">${r.allAges.toLocaleString()}</td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CA EQUIVALENT GRID
+// ══════════════════════════════════════════════════════════════
+function renderCAGrid() {
+  const grid = document.getElementById('ca-grid');
+  if (grid.children.length) return;
+  STATES.forEach(s => {
+    const m = CA_MULT[s[0]] || 1.0;
+    const cls = m >= 5 ? 'x6' : m >= 4 ? 'x4' : m >= 3 ? 'x3' : m >= 2 ? 'x2' : m >= 1 ? 'x1' : 'xlo';
+    const card = document.createElement('div');
+    card.className = 'ca-card';
+    card.innerHTML = `<div class="ca-state">${s[1]}</div>
+      <div class="ca-mult ${cls}">${m.toFixed(1)}× CA</div>
+      <div class="ca-rate">${s[8].toFixed(2)}/100k combined</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCROLL & INIT
+// ══════════════════════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  document.getElementById('scrolltop').classList.toggle('vis', window.scrollY > 500);
+});
+
+buildOverviewCharts();
+</script>
+</body>
+</html>
